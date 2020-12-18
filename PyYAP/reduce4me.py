@@ -1,4 +1,4 @@
-Pkg_path = '/home/eugene/pipelines/PySex/PyYAP/'
+Pkg_path = '/path/to/the/location/of/this/pipeline'
 
 import time
 from datetime import datetime, date, time
