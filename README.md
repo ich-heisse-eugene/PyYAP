@@ -27,6 +27,7 @@ name-of-obj-file.fits   ;  HD 92554*
 name-of-arc-file.fits   ; ThAr
 
 *Objects must be recognizable by Simbad
+
 The minimum set of types: bias, fits, object, thar
 
 Play with the program or contact me if you need help: esemenko@gmail.com or fb.com/eugene.semenko
