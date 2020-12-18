@@ -5,4 +5,32 @@ A further development of PySEX pipeline, originally written by Vadim Krushinsky 
 - internal (sys, os, warnings, math, shutil, datetime, types, datetime, types, time, copy, logging).
 - external (astropy, numpy, matplotlib, PyAstronomy, scipy, scikit-image, sklearn, astroquery, argparse).
 
-Current version of pipeline is designed to reduce echelle spectra coming from the Medium Resolution Echelle Spectrograph (MRES) of the 2.4-m Thai National Telescope. The package was tested on a machine running Debian Linux Sid.
+Current version of pipeline is designed to reduce echelle spectra coming from the Medium Resolution Echelle Spectrograph (MRES) of the 2.4-m Thai National Telescope. The package was tested on machines running Debian Linux Sid and macOS Big Sur.
+
+To install the package unpack the archive in the preferred place and set its path in the first line of file reduce4me.py (variable Pkg_path).
+
+Example usage:
+- lazy regime:
+python3  /path/to/the/package/reduce4me.py /current/work/directory/with/FITSfiles 
+- advanced regime (extract data using APEX algorithm with subtraction of scattered and without removing of temporary files):
+python3  /path/to/the/package/reduce4me.py /current/work/directory/with/FITSfiles --device mres --method APEX --sl True --strip False
+
+To get help run this:
+python3  /path/to/the/package/reduce4me.py /current/work/directory/with/FITSfiles  --help
+
+Warning:
+1. By default the package is configured for work with data from MRES in the observing season 2020/2021
+2. Before the first run it is mandatory to create in the directory with FITS-files an ASCII file names.txt of the following format:
+name-of-bias-file.fits   ;  Bias
+name-of-flat-file.fits   ;  Flat
+name-of-obj-file.fits   ;  HD 92554*
+name-of-arc-file.fits   ; ThAr
+
+*Objects must be recognizable by Simbad
+The minimum set of types: bias, fits, object, thar
+
+Play with the program or contact me if you need help: esemenko@gmail.com or fb.com/eugene.semenko
+Eugene Semenko
+Last update 18 Dec 2020, NARIT
+
+
