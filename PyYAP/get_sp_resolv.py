@@ -4,6 +4,9 @@
     a PDF file with report
     Written by Eugene Semenko
     Last modification: 2020-10-22
+    Changelog:
+    2020-12-15. Fixed normalisation of an average profile in each order. Added
+                labels to the axis. ES
 """
 # from sys import argv, exit
 import datetime
@@ -217,10 +220,10 @@ def fit_line(w, y):
         return -1, -1, -1, x_out, y_out
     else:
         fwhm = 2*np.sqrt(2*np.log2(2))*popt[2]
-        if fwhm >= 2*dlam and fwhm <= 4*dlam:
+        if fwhm >= 2*dlam and fwhm <= 6*dlam:
             res_fwhm = int(popt[1] / fwhm)
             x_cen = (w - popt[1]) / dlam
-            y = y / popt[0]
+            y = (y - popt[3]) / popt[0]
             x_out.append(x_cen)
             y_out.append(y)
         else:
@@ -272,6 +275,8 @@ def make_report_resol(w, sp, input_file, view=False):
                     if len(x_ord) != 0 and len(y_ord) != 0:
                         f_ax.plot(x_ord, y_ord, 'b.', ms=0.7)
                     f_ax.set_title(f"Order {i}, {w[i,0]:.0f}-{w[i,-1]:.0f}Å", fontsize=fontsize)
+                    f_ax.set_xlabel("Pixel", fontsize=fontsize)
+                    f_ax.set_ylabel("Normalized intensity", fontsize=fontsize)
                     try:
                         p0 = np.array([1, 0, 1., 1.])
                         popt, pcov = curve_fit(gauss, x_ord, y_ord, p0, maxfev=10000)
@@ -297,7 +302,7 @@ def make_report_resol(w, sp, input_file, view=False):
             pass
         finally:
             fwhm = 2*np.sqrt(2*np.log2(2))*popt[2]
-            xx = np.linspace(np.min(result_x), np.max(result_x), 100)
+            xx = np.linspace(np.min(result_x)-1, np.max(result_x)+1, 100)
             fig = plt.figure(constrained_layout=True, dpi=300, tight_layout=True)
             fig.set_size_inches(8.27, 11.69, forward=True)
             ax = fig.add_subplot(1,1,1)
@@ -307,6 +312,8 @@ def make_report_resol(w, sp, input_file, view=False):
             label = f"Median R={np.median(result_resol):.0f}\nMedian $\Delta\lambda$={np.median(result_dwl0):.4f} \
                                Å/px\n R from fit = {R:.0f} \n FWHM={fwhm:.2f} px\n{nlines} lines"
             ax.annotate(label, (2.5, 0.7), va='center', fontsize=fontsize-1)
+            ax.set_xlabel("Pixel")
+            ax.set_ylabel("Normalized intensity")
         pdf.savefig()
         plt.close()
     return np.median(result_resol)

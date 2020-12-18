@@ -93,12 +93,13 @@ def order_tracer(dir_name, file_name, X_half_width, step, min_height, aperture, 
                         popt, pcov = curve_fit(moffat, Y, prof, p0, maxfev=10000)
                     except RuntimeError:
                         pass
-                    fwhm = 2*popt[1]*np.sqrt(2**(1/(popt[2]))-1)
-                    if np.isfinite(fwhm) and fwhm > 1:
-                        xfit.append(x)
-                        centr.append(popt[4]+yc)
-                        width.append(fwhm)
-                    med_fwhm = np.median(width)
+                    else:
+                        fwhm = 2*popt[1]*np.sqrt(2**(1/(popt[2]))-1)
+                        if np.isfinite(fwhm) and fwhm > 1 and fwhm < 10:
+                            xfit.append(x)
+                            centr.append(popt[4]+yc)
+                            width.append(fwhm)
+                        med_fwhm = np.median(width)
                     # print(f"Order {i}, median FWHM: {med_fwhm:.2f}, mean FWHM: {np.mean(width):.2f}")
         print(f"Fit {len(xfit)} points, median FWHM {med_fwhm:.3f}")
         logging.info(f"Fit {len(xfit)} points, median FWHM {med_fwhm:.3f}")
@@ -137,22 +138,23 @@ def order_tracer(dir_name, file_name, X_half_width, step, min_height, aperture, 
     for i in range(orders.shape[0]):
         ax0.plot(x_coord, chebval(x_coord, orders[i, :]) + aperture * width_tab[i, :], 'b-', lw=0.4)
         ax0.plot(x_coord, chebval(x_coord, orders[i, :]) - aperture * width_tab[i, :], 'r-', lw=0.4)
+        ax0.text(x_coord[15], chebval(x_coord[15], orders[i, :]), i+1, color='k', backgroundcolor='yellow', fontsize=8)
     plt.gca().invert_yaxis()
-    fig.savefig(dir_name+"/orders_map.pdf", dpi=250)
+    fig.savefig(dir_name+"/orders_map.pdf", dpi=350)
     if view:
         plt.show()
 
     return None
 
 # # # ##############################test###############################
-# dir_name='/home/eugene/work/mres/20201110/slit03017'
+# dir_name='/Users/sea/work/science/programming/pipelines/echelle/2020-12-01-2020_V1031Ori_chachansao/'
 # file_name = 's_ordim.fits'
-# X_half_width = 4
-# min_height = 20
+# X_half_width = 3
+# min_height = 10
 # view = True
-# step = 10
+# step = 5
 # aperture = 1.1
-# view = True
+# adaptive = True
+# # # # ##
+# order_tracer(dir_name, file_name, X_half_width, step, min_height, aperture, adaptive, view)
 # # # ##
-# order_tracer(dir_name, file_name, X_half_width, step, min_height, aperture, view)
-# # ##

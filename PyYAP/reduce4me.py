@@ -1,4 +1,4 @@
-Pkg_path = '/home/eugene/pipelines/PySex/PyYAP'
+Pkg_path = '/home/eugene/pipelines/PySex/PyYAP/'
 
 import time
 from datetime import datetime, date, time
@@ -35,7 +35,7 @@ warnings.filterwarnings("ignore")
 
 #####################################################################################
 ##parameters
-devices = ['mres', 'echelle'] # List of valid devices
+devices = ['mres', 'echelle_ccs'] # List of valid devices
 
 #####################################################################################
 ##start here
@@ -141,17 +141,18 @@ def S_EX(conf):
     print()
 
     #   Fix CCD cosmetics
-    print("Fix cosmetics")
-    mask = conf['mask']
-    status = fixpix(Path2Data, '/temp/flat_list.txt', mask, area, flip)
-    print("flat frames ... done")
-    logging.info("Cosmetics of flat frames is fixed")
-    status = fixpix(Path2Data, '/temp/thar_list.txt', mask, area, flip)
-    print("ThAr frames fixed")
-    logging.info("Cosmetics of ThAr frames is fixed")
-    status = fixpix(Path2Data, '/temp/obj_CRR_cleaned_list.txt', mask, area, flip)
-    print("scientific frames ... done")
-    logging.info("Cosmetics of scientific frames is fixed")
+    if conf['mask'].strip() != 'None':
+        print("Fix cosmetics")
+        mask = conf['mask'].strip()
+        status = fixpix(Path2Data, '/temp/flat_list.txt', mask, area, flip)
+        print("flat frames ... done")
+        logging.info("Cosmetics of flat frames is fixed")
+        status = fixpix(Path2Data, '/temp/thar_list.txt', mask, area, flip)
+        print("ThAr frames fixed")
+        logging.info("Cosmetics of ThAr frames is fixed")
+        status = fixpix(Path2Data, '/temp/obj_CRR_cleaned_list.txt', mask, area, flip)
+        print("scientific frames ... done")
+        logging.info("Cosmetics of scientific frames is fixed")
 
     ####make median super flat, delete old flats
     s_flat_name = conf['s_flat_name']
@@ -191,7 +192,7 @@ def S_EX(conf):
     view = eval(conf['view'])
     adaptive = eval(conf['adaptive'])
     order_tracer(Path2Data, s_ordim_name, slice_half_width, step, min_height, aperture, adaptive, view)
-    shutil.move(Path2Data+'/'+s_bias_name, Path2Temp)
+    shutil.move(Path2Data+'/'+s_ordim_name, Path2Temp)
 
     # remove scatter light
     subtract = eval(conf['subtract'])
@@ -322,11 +323,14 @@ def S_EX(conf):
         os.makedirs(Path2Data+'/Old_Thars')
 
     with open(list_name, 'r') as f:
+        anr = float(conf['anr'])
+        xord = int(conf['xord'])
+        yord = int(conf['yord'])
         for line in f:
             name = line.strip()
             print('Search WL solution for:'+name)
             logging.info("Search WL solution for: {name}")
-            thar_auto(Path2Data, name, view)
+            thar_auto(Path2Data, name, anr, xord, yord, view)
            ##save new WL solution to archive
             dt=datetime.now()
             dt=dt.strftime("%y-%m-%dT%H-%M")
@@ -344,7 +348,7 @@ def S_EX(conf):
     os.remove(Path2Data + '/thar_last.fits')
     dt=datetime.now()
     dt=dt.strftime("%y-%m-%dT%H-%M")
-    os.rename(Path2Temp + '/traces.txt', './Old_Thars/' + dt + '_traces.txt')
+    shutil.copy(Path2Temp + '/traces.txt', './Old_Thars/' + dt + '_traces.txt')
 
     ##search nearest thar for every image and apply WL solution
     obj_list = Path2Temp + '/obj_extracted.txt'                      #name of list with objects
@@ -464,12 +468,11 @@ if __name__ == "__main__":
     Data_path = args.cwd.strip()
     conf['Path2Data'] = Data_path
     conf['device'] = args.device.strip()
-    if args.device == 'mres':
-        if os.path.isfile(Data_path+"/names.txt"):
-            from mres_check_header import fill_headers
-            print(f"Correcting FITS headers in {Data_path} \r")
-            fill_headers(Data_path+"/names.txt")
-            print()
+    if os.path.isfile(Data_path+"/names.txt"):
+        from check_header import fill_headers
+        print(f"Correcting FITS headers in {Data_path} \r")
+        fill_headers(Data_path+"/names.txt", conf['device'])
+        print()
     if not os.path.isfile(Data_path + "/" + args.device + '.conf'):
         shutil.copy(Pkg_path.strip() + '/devices/' + args.device + '/' + args.device + '.conf', Data_path)
     with open(Data_path + "/" + args.device + '.conf') as f:
@@ -489,8 +492,9 @@ if __name__ == "__main__":
     if args.extractonly:
         conf['calibrate'] = 'False'
 
-    if not os.path.isfile(Data_path + "/" + conf['mask'].strip()):
-        conf['mask'] = Pkg_path.strip() + '/devices/' + args.device + '/' + conf['mask'].strip()
+    if conf['mask'].strip() != 'None':
+        if not os.path.isfile(Data_path + "/" + conf['mask'].strip()):
+            conf['mask'] = Pkg_path.strip() + '/devices/' + args.device + '/' + conf['mask'].strip()
 
     S_EX(conf)
 
