@@ -33,4 +33,5 @@ The minimum set of types: bias, fits, object, thar
 Play with the program or contact me if you need help: esemenko@gmail.com or fb.com/eugene.semenko
 
 Eugene Semenko
-Last update 18 Dec 2020, NARIT
+
+Last update 21 Dec 2020, NARIT
