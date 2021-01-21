@@ -1,4 +1,4 @@
-Pkg_path = "/Path/to/the/directory/with/this/file/"
+Pkg_path = "/Users/sea/work/science/programming/pipelines/PyYAP"
 
 import time
 from datetime import datetime, date, time
@@ -195,7 +195,7 @@ def S_EX(conf):
     view = eval(conf['view'])
     adaptive = eval(conf['adaptive'])
     order_tracer(Path2Data, s_ordim_name, slice_half_width, step, min_height, aperture, adaptive, view)
-    shutil.move(Path2Data.joinpath(s_ordim_name), Path2Temp)
+    shutil.move(os.fspath(Path2Data.joinpath(s_ordim_name)), os.fspath(Path2Temp))
 
     # remove scatter light
     subtract = eval(conf['subtract'])
@@ -204,7 +204,7 @@ def S_EX(conf):
         y_order = int(conf['y_order'])
         ap_file = Path2Temp.joinpath('traces.txt') ##
         sl_remover_data = sl_remover(Path2Data, Path2Temp, s_flat_name, ap_file, step, x_order, y_order, subtract, view)
-        shutil.move(Path2Data.joinpath(s_flat_name), Path2Temp)
+        shutil.move(os.fspath(Path2Data.joinpath(s_flat_name)), os.fspath(Path2Temp))
         print()
 
         ap_file = Path2Temp.joinpath('traces.txt')
@@ -214,7 +214,7 @@ def S_EX(conf):
                 name = line.strip()
                 name = name.split(os.sep)[-1]
                 sl_remover_data = sl_remover(Path2Data, Path2Temp, name, ap_file, step, x_order, y_order, subtract, view)
-                shutil.move(Path2Data.joinpath(name), Path2Temp)
+                shutil.move(os.fspath(Path2Data.joinpath(name)), os.fspath(Path2Temp))
                 print(sl_remover_data, file=f_out)
                 print()
             f.close()
@@ -253,7 +253,7 @@ def S_EX(conf):
             status, status_err = fox(name, flat_name, ap_file, ex_type, aperture)
             print(f"Extracted spectrum saved in {status}")
             logging.info(f"Extracted spectrum saved in {status}")
-            shutil.move(name, Path2Temp)
+            shutil.move(os.fspath(name), os.fspath(Path2Temp))
             print(status, file=f_out)
             print(status_err, file=fe_out)
             print()
@@ -274,7 +274,7 @@ def S_EX(conf):
             status, _ = fox(name, flat_name, ap_file, 'APEX', aperture) # Note the fixed method of extraction
             print(f"Extracted spectrum saved in {status}")
             logging.info(f"Extracted spectrum saved in {status}")
-            shutil.move(name, Path2Temp)
+            shutil.move(os.fspath(name), os.fspath(Path2Temp))
             print(status, file=f_out)
             print()
     f.close()
@@ -292,13 +292,13 @@ def S_EX(conf):
             source = os.listdir(Path2Data)
             for files in source:
                 if files.endswith('_ec.fits'):
-                    shutil.move(files, Path2Data.joinpath('Reduced'))
+                    shutil.move(os.fspath(files), os.fspath(Path2Data.joinpath('Reduced')))
                 if files.endswith('_err.fits'):
-                    shutil.move(files, Path2Data.joinpath('Reduced'))
+                    shutil.move(os.fspath(files), os.fspath(Path2Data.joinpath('Reduced')))
                 if files.endswith('.pdf'):
-                    shutil.move(files, Path2Data.joinpath('Reduced'))
+                    shutil.move(os.fspath(files), os.fspath(Path2Data.joinpath('Reduced')))
                 if files.endswith('.log'):
-                    shutil.move(files, Path2Data.joinpath('Reduced'))
+                    shutil.move(os.fspath(files), os.fspath(Path2Data.joinpath('Reduced')))
 
         if eval(conf['strip']):
             print("Cleaning catalogues...")
@@ -345,7 +345,7 @@ def S_EX(conf):
     f.close()
     print()
 
-    shutil.move(flat_name, Path2Temp)
+    shutil.move(os.fspath(flat_name), os.fspath(Path2Temp))
     os.remove(Path2Data.joinpath('thar_last.dat'))
     os.remove(Path2Data.joinpath('thar.dat'))
     os.remove(Path2Data.joinpath('thar_last.fits'))
@@ -432,11 +432,11 @@ def S_EX(conf):
         source = os.listdir(Path2Data)
         for files in source:
             if files.endswith('_WCS.fits'):
-                shutil.move(files, Path2Data.joinpath('Reduced'))
+                shutil.move(os.fspath(files), os.fspath(Path2Data.joinpath('Reduced')))
             if files.endswith('.pdf'):
-                shutil.move(files, Path2Data.joinpath('Reduced'))
+                shutil.move(os.fspath(files), os.fspath(Path2Data.joinpath('Reduced')))
             if files.endswith('.log'):
-                shutil.move(files, Path2Data.joinpath('Reduced'))
+                shutil.move(os.fspath(files), os.fspath(Path2Data.joinpath('Reduced')))
 
     if eval(conf['strip']):
         print("Cleaning catalogues...")
