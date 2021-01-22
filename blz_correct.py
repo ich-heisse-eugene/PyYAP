@@ -110,7 +110,7 @@ def reject_points(w, r, cont, low_rej, high_rej, func, ord):
 def extract_blz(source_file, blz_file, fit_func, fit_ord, fit_niter, fit_low_rej, fit_high_rej):
     w_init, r_init, hdr_init = read_multispec(source_file)
     hdr_init.set('OBJECT', 'Blaze', 'Blaze function extracted from flat')
-    cont_lev = np.zeros(np.shape(w_init))
+    cont_lev = np.zeros(np.shape(w_init), dtype=r_init[0].dtype)
     nord = np.shape(w_init)[0]
     for ord in range(nord):
         w_tmp = w_init[ord, :]
@@ -132,7 +132,7 @@ def remove_blz(file_spec, file_blaze, file_corr):
     _, r_s, hdr_s = read_multispec(file_spec)
     _, r_b, _ = read_multispec(file_blaze)
 
-    r_cor = r_s / r_b.astype(type(r_s))
+    r_cor = r_s / r_b
     hdr_s['HISTORY'] = 'Blaze normalization of the spectrum'
     hdu = pyfits.PrimaryHDU(r_cor)
     hdu.header = hdr_s.copy()

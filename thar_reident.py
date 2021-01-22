@@ -159,8 +159,8 @@ def add_lines(spectrum, OS, new_features, thar, disp_params, Y_Order):
                                 WL = thar[nearest]
                                 if WL_checker(WL, ii, OS, new_features)==0:
                                     new_features.append([ii+OS, x_coo, WL, y_coo])
-        print(len(new_features) - old_len, 'features found in order', ii+OS)
-        logging.info(f"{len(new_features) - old_len} features found in order {ii+OS}")
+        print(f"{len(new_features) - old_len:.0f} features found in order {ii+OS:.0f}")
+        logging.info(f"{len(new_features) - old_len:.0f} features found in order {ii+OS:.0f}")
 
     return (new_features)
 ####################################################################
