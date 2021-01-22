@@ -10,8 +10,6 @@ import argparse
 import logging
 from pathlib import Path
 
-# path.append(Pkg_path)
-
 from lister import lister
 from trimmer import trimmer
 from fixpix import fixpix
@@ -38,7 +36,7 @@ Pkg_path = Path(Pkg_path)
 
 #####################################################################################
 ##parameters
-devices = ['mres', 'echelle_ccs'] # List of valid devices
+devices = ['mres', 'eshel_ccs', 'eshel_krt'] # List of valid devices
 
 #####################################################################################
 ##start here
@@ -425,26 +423,32 @@ def S_EX(conf):
         print()
 
     try:
-        os.mkdir(Path2Data.joinpath('Reduced'))
+        if not os.path.exists(Path2Data.joinpath('Reduced')):
+            os.mkdir(Path2Data.joinpath('Reduced'))
     except OSError as e:
         print(f"Exception: {e}")
     finally:
         source = os.listdir(Path2Data)
         for files in source:
-            if files.endswith('_WCS.fits'):
-                shutil.move(os.fspath(files), os.fspath(Path2Data.joinpath('Reduced')))
-            if files.endswith('.pdf'):
-                shutil.move(os.fspath(files), os.fspath(Path2Data.joinpath('Reduced')))
-            if files.endswith('.log'):
-                shutil.move(os.fspath(files), os.fspath(Path2Data.joinpath('Reduced')))
+            if os.path.isfile(files):
+                if files.endswith('_WCS.fits'):
+                    shutil.copy2(os.fspath(files), os.fspath(Path2Data.joinpath('Reduced')))
+                elif files.endswith('.pdf'):
+                    shutil.copy2(os.fspath(files), os.fspath(Path2Data.joinpath('Reduced')))
+                elif files.endswith('.log'):
+                    shutil.copy2(os.fspath(files), os.fspath(Path2Data.joinpath('Reduced')))
+                else:
+                    shutil.copy2(os.fspath(files), os.fspath(Path2Data.joinpath('temp')))
+                os.remove(files)
+
 
     if eval(conf['strip']):
         print("Cleaning catalogues...")
         logging.info("Cleaning catalogues...")
         shutil.rmtree(Path2Data.joinpath('temp'))
         shutil.rmtree(Path2Data.joinpath('Old_Thars'))
-        for filepath in glob.iglob(str(Path2Data)+ os.sep +'*.*'):
-            os.remove(filepath)
+        # for filepath in glob.iglob(str(Path2Data)+ os.sep +'*.*'):
+        #     os.remove(filepath)
 
     end = datetime.now()
     print(f"Ended at: {end.time()}")
