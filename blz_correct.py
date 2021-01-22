@@ -123,8 +123,8 @@ def extract_blz(source_file, blz_file, fit_func, fit_ord, fit_niter, fit_low_rej
             idx_wrong = np.where(cont_cur == 0.)
             cont_cur[idx_wrong] = r_tmp[idx_wrong]
         cont_lev[ord, :] = fit_cont(w_init[ord, :], fit_func, coef)
-    hdu = pyfits.PrimaryHDU(cont_lev)
-    hdu.header = hdr_init
+    hdu = pyfits.PrimaryHDU(np.float32(cont_lev))
+    hdu.header = hdr_init.copy()
     hdu.writeto(blz_file, overwrite=True)
     return blz_file
 
@@ -134,6 +134,6 @@ def remove_blz(file_spec, file_blaze, file_corr):
     r_cor = r_s / r_b
     hdr_s['HISTORY'] = 'Blaze normalization of the spectrum'
     hdu = pyfits.PrimaryHDU(r_cor)
-    hdu.header = hdr_s
+    hdu.header = hdr_s.copy()
     hdu.writeto(file_corr, overwrite=True)
     return file_corr
