@@ -26,13 +26,13 @@ def lister(data_dir, raw_dir, temp_dir):
                 hdulist = pyfits.open(file_list[ii], mode='update')
                 prihdr = hdulist[0].header
                 if 'IMAGETYP' not in prihdr:
-                    if file_list[ii].lower().find('bias') != -1:
+                    if os.fspath(file_list[ii]).lower().find('bias') != -1:
                         im_type = 'BIAS'
-                    elif file_list[ii].lower().find('flat') != -1:
+                    elif os.fspath(file_list[ii]).lower().find('flat') != -1:
                         im_type = 'FLAT'
-                    elif file_list[ii].lower().find('thar') != -1:
+                    elif os.fspath(file_list[ii]).lower().find('thar') != -1:
                         im_type = 'THAR'
-                    elif file_list[ii].lower().find('obj') != -1:
+                    elif os.fspath(file_list[ii]).lower().find('obj') != -1:
                         im_type = 'OBJ'
                 else:
                     im_type = prihdr['IMAGETYP']
