@@ -245,8 +245,8 @@ def first_ident(spectrum, zero, zero_features, OS):
             a=1
         shift = search_shift(s_order, z_order,a)  #get shift
         new_features = reidentify_features(s_order, OS, zero_features, ii, shift, new_features)
-        print('shift=' + str(shift)+'; \t', len(new_features) - founded, 'features identified in order', ii+OS)
-        logging.info(f"shift= {str(shift)}\t'{len(new_features) - founded} features identified in order {ii+OS}")
+        print(f"shift= {str(shift)}\t'{len(new_features) - founded:.0f} features identified in order {ii+OS:.0f}")
+        logging.info(f"shift= {str(shift)}\t'{len(new_features) - founded:.0f} features identified in order {ii+OS:.0f}")
         founded = len(new_features)
     return(new_features)
 
