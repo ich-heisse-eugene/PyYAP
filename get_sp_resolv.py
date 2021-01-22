@@ -2,10 +2,11 @@
     Programme estimates the resolving power from fitting of ThAr lines and produces
     a PDF file with report
     Written by Eugene Semenko
-    Last modification: 2020-10-22
+    Last modification: 2021-01-22
     Changelog:
     2020-12-15. Fixed normalisation of an average profile in each order. Added
                 labels to the axis. ES
+    2021-01-22. Replaced some symbols with letters in Latin script.
 """
 import datetime
 from astropy.io import fits as pyfits
@@ -200,8 +201,8 @@ def resol_in_order(wave, spec, n):
                 x.append(x_cur)
                 y.append(y_cur)
     if len(res) != 0:
-        print(f"Order #{n:2.0f} {wave[0]:.1f}-{wave[-1]:.1f}Å: Median R = {np.median(res):.0f}, Δλ = {np.median(dwl):.4f}. {len(res)} lines measured")
-        logging.info(f"Order #{n:2.0f} {wave[0]:.1f}-{wave[-1]:.1f}Å: Median R = {np.median(res):.0f}, Δλ = {np.median(dwl):.4f}. {len(res)} lines measured")
+        print(f"Order #{n:2.0f} {wave[0]:.1f}-{wave[-1]:.1f}A: Median R = {np.median(res):.0f}, dl = {np.median(dwl):.4f}. {len(res)} lines measured")
+        logging.info(f"Order #{n:2.0f} {wave[0]:.1f}-{wave[-1]:.1f}A: Median R = {np.median(res):.0f}, dl = {np.median(dwl):.4f}. {len(res)} lines measured")
     else:
         return -1,-1,-1,-1,-1
     return res, wl, dwl, x, y
