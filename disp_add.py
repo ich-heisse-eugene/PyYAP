@@ -73,7 +73,7 @@ def disp_add(fits_name, thar_name, view):
     y_order = int(solution[2])
     solution = np.delete(solution, [0, 1, 2])
 
-    WAT2 = 'wtype=multispec'
+    WAT2 = ''
     add_string = ''
 
     X = np.arange(0, spectrum.shape[1], 1)
@@ -96,8 +96,8 @@ def disp_add(fits_name, thar_name, view):
         APNUM = (prihdr['APNUM'+str(ii+1)])
         del prihdr['APNUM'+str(ii+1)]
         APNUM = APNUM.split()
-        add_string = (" spec%i = \"%i %i %i %.10f %0.15f %i %i. %.2f %.2f\"" % (ii+1, int(APNUM[0]), ii+order_shift, 0, w1, dw, nw, 0, float(APNUM[2]), float(APNUM[3])))
-        WAT2 = WAT2+add_string
+        add_string = (" spec%i = \"%i %i %i %.10f %0.15f %i %i. %.2f %.2f\"" % (spectrum.shape[0]-ii, spectrum.shape[0]-ii, ii+order_shift, 0, w1, dw, nw, 0, float(APNUM[2]), float(APNUM[3])))
+        WAT2 = add_string + WAT2
 
         if view:
             ax.plot(X_lin, Y_lin, 'r')
@@ -114,7 +114,8 @@ def disp_add(fits_name, thar_name, view):
     prihdr['CRPIX1'] = 0
     prihdr['WAT0_001'] = 'system=multispec'
     prihdr['WAT1_001'] = 'wtype=multispec label=Wavelength units=angstroms'
-    for ii in range (1, int(2+len(WAT2)/68)):
+    WAT2 = 'wtype=multispec' + WAT2
+    for ii in reversed(range(1, int(2+len(WAT2)/68))):
         keyword = str("WAT2_%03i" % ii)
         prihdr[keyword] =  str(WAT2[0:68])
         WAT2 = WAT2[68:]
@@ -122,7 +123,7 @@ def disp_add(fits_name, thar_name, view):
     if bcr != -999:
         prihdr['HISTORY'] = 'Applied barycentric correction BARYCORR'
 
-    hdulist[0].data = spectrum
+    hdulist[0].data = np.flip(spectrum, axis=0)
     new_name = os.path.splitext(fits_name)[0]  + "_WCS.fits"
     hdulist.writeto(new_name, clobber=True)
 
