@@ -447,8 +447,6 @@ def S_EX(conf):
         logging.info("Cleaning catalogues...")
         shutil.rmtree(Path2Data.joinpath('temp'))
         shutil.rmtree(Path2Data.joinpath('Old_Thars'))
-        # for filepath in glob.iglob(str(Path2Data)+ os.sep +'*.*'):
-        #     os.remove(filepath)
 
     end = datetime.now()
     print(f"Ended at: {end.time()}")
@@ -456,7 +454,9 @@ def S_EX(conf):
     i, d = divmod((end-start).seconds/60, 1)
     print(f"Duration (m:s): {i:3.0f}:{int(d*60)}")
     logging.info(f"Duration (m:s): {i:3.0f}:{int(d*60)}")
-
+    logging.shutdown()
+    shutil.copy2(os.fspath(Path2Data.joinpath('pyyap_journal.log')), os.fspath(Path2Data.joinpath('Reduced')))
+    os.remove(os.fspath(Path2Data.joinpath('pyyap_journal.log')))
     return None
 
 ## Main programme  ##
