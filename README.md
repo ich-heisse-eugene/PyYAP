@@ -22,10 +22,14 @@ Warning:
 1. By default the package is configured for work with data from MRES in the observing season 2020/2021
 2. Before the first run it is mandatory to create in the directory with FITS-files an ASCII file names.txt of the following format:
 
-name-of-bias-file.fits   ;  Bias\n
-name-of-flat-file.fits   ;  Flat\n
-name-of-obj-file.fits   ;  HD 92554*\n
-name-of-arc-file.fits   ; ThAr\n
+name-of-bias-file.fits   ;  Bias
+
+name-of-flat-file.fits   ;  Flat
+
+name-of-obj-file.fits   ;  HD 92554*
+
+name-of-arc-file.fits   ; ThAr
+
 
 *Objects' names must be recognizable by Simbad
 
