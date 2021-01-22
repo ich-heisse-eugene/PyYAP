@@ -430,7 +430,7 @@ def S_EX(conf):
     finally:
         source = os.listdir(Path2Data)
         for files in source:
-            if os.path.isfile(files):
+            if os.path.isfile(files) and not files.endswith('.log'):
                 if files.endswith('_WCS.fits'):
                     shutil.copy2(os.fspath(files), os.fspath(Path2Data.joinpath('Reduced')))
                 elif files.endswith('.pdf'):
