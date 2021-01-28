@@ -20,7 +20,10 @@ def medianer(dir_name, list_name, out_name):
             _data.append(pyfits.getdata(name))
             prihdr = pyfits.getheader(name)
             file_list.append(name.split(os.sep)[-1])
-            _time.append(time.mktime(time.strptime(prihdr['DATE-OBS'], "%Y-%m-%dT%H:%M:%S.%f")))  #.%f
+            try:
+                _time.append(time.mktime(time.strptime(prihdr['DATE-OBS'], "%Y-%m-%dT%H:%M:%S.%f")))
+            except:
+                _time.append(time.mktime(time.strptime(prihdr['DATE-OBS']+'.0', "%Y-%m-%dT%H:%M:%S.%f")))
             tm = Time.Time(prihdr['DATE-OBS'])
             JD1.append(tm.jd)
             JD2.append(tm.jd + prihdr['EXPOSURE']/2./86400.)
