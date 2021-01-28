@@ -115,7 +115,7 @@ def disp_add(fits_name, thar_name, view):
     prihdr['WAT0_001'] = 'system=multispec'
     prihdr['WAT1_001'] = 'wtype=multispec label=Wavelength units=angstroms'
     WAT2 = 'wtype=multispec' + WAT2
-    for ii in reversed(range(1, int(2+len(WAT2)/68))):
+    for ii in range(1, int(2+len(WAT2)/68)):
         keyword = str("WAT2_%03i" % ii)
         prihdr[keyword] =  str(WAT2[0:68])
         WAT2 = WAT2[68:]
