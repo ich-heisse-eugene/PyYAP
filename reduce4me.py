@@ -1,4 +1,4 @@
-Pkg_path = "/Volumes/DATA/work/pipelines/PyYAP"
+Pkg_path = "/Users/sea/work/science/PyYAP"
 
 import time
 from datetime import datetime, date, time

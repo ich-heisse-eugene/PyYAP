@@ -6,6 +6,7 @@ import logging
 ##################################################################
 def lister(data_dir, raw_dir, temp_dir):
     file_list = []
+    darks = False
     dir_content = os.listdir(data_dir)
 
     #create list of fits-files
@@ -16,6 +17,7 @@ def lister(data_dir, raw_dir, temp_dir):
     counter = len(file_list)
     if len(file_list) > 0:
         bf = open(temp_dir.joinpath('bias_list.txt'), 'w')
+        df = open(temp_dir.joinpath('dark_list.txt'), 'w')
         ff = open(temp_dir.joinpath('flat_list.txt'), 'w')
         tf = open(temp_dir.joinpath('thar_list.txt'), 'w')
         of = open(temp_dir.joinpath('obj_list.txt'), 'w')
@@ -28,6 +30,8 @@ def lister(data_dir, raw_dir, temp_dir):
                 if 'IMAGETYP' not in prihdr:
                     if os.fspath(file_list[ii]).lower().find('bias') != -1:
                         im_type = 'BIAS'
+                    if os.fspath(file_list[ii]).lower().find('dark') != -1:
+                        im_type = 'DARK'
                     elif os.fspath(file_list[ii]).lower().find('flat') != -1:
                         im_type = 'FLAT'
                     elif os.fspath(file_list[ii]).lower().find('thar') != -1:
@@ -45,6 +49,14 @@ def lister(data_dir, raw_dir, temp_dir):
                     else:
                         prihdr.set('IMAGETYP', 'FLAT', 'Flat field spectrum')
                     print(file_list[ii], file=ff)
+                    counter = counter-1
+                elif im_type.lower().find('dark') != -1:
+                    if 'IMAGETYP' in prihdr:
+                        prihdr['IMAGETYP'] = 'DARK'
+                    else:
+                        prihdr.set('IMAGETYP', 'DARK', 'Dark current frame')
+                    if darks == False: darks = True
+                    print(file_list[ii], file=df)
                     counter = counter-1
                 elif im_type.lower().find('thar') != -1:
                     if 'IMAGETYP' in prihdr:
@@ -68,9 +80,12 @@ def lister(data_dir, raw_dir, temp_dir):
                 logging.error("Can't open file: {file_list[ii]}")
                 pass
         bf.close()
+        df.close()
         ff.close()
         tf.close()
         of.close()
+        if not darks:
+            os.remove(temp_dir.joinpath('dark_list.txt'))
         if counter==0:
             logging.info('OK')
             return ('OK')
