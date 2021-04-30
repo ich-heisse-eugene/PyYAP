@@ -1,4 +1,4 @@
-Pkg_path = "/Path/to/directory/with/pipeline"
+Pkg_path = "/Volumes/DATA/work/pipelines/PyYAP"
 
 import time
 from datetime import datetime, date, time
@@ -15,6 +15,7 @@ from trimmer import trimmer
 from fixpix import fixpix
 from medianer import medianer
 from list_subtractor import list_subtractor
+from list_dark_subtractor import dark_subtractor
 from thar_combiner import thar_combiner
 from tracer import order_tracer
 from sl_remover import sl_remover
@@ -88,20 +89,34 @@ def S_EX(conf):
     flip = conf['flip']
     print("Trim overscan and flip image")
 
+    #   Fix CCD cosmetics
+    if conf['mask'] != 'None':
+        print("Fix cosmetics")
+        mask = conf['mask']
+        status = fixpix(Path2Data, Path2Temp.joinpath('flat_list.txt'), mask, area, flip)
+        print("flat frames ... done")
+        logging.info("Cosmetics of flat frames is fixed")
+        status = fixpix(Path2Data, Path2Temp.joinpath('thar_list.txt'), mask, area, flip)
+        print("ThAr frames fixed")
+        logging.info("Cosmetics of ThAr frames is fixed")
+        status = fixpix(Path2Data, Path2Temp,joinpath('obj_CRR_cleaned_list.txt'), mask, area, flip)
+        print("scientific frames ... done")
+        logging.info("Cosmetics of scientific frames is fixed")
+
     area = list(map(int, conf['area'].strip('][').split(',')))
-    trimmer_data = trimmer(Path2Data, Path('temp/bias_list.txt'), area, flip)
+    trimmer_data = trimmer(Path2Data, Path2Temp.joinpath('bias_list.txt'), area, flip)
     print("Biases trimmed")
     logging.info("Biases trimmed")
 
-    trimmer_data = trimmer(Path2Data, Path('temp/flat_list.txt'), area, flip)
+    trimmer_data = trimmer(Path2Data, Path2Temp.joinpath('flat_list.txt'), area, flip)
     print("Flats trimmed")
     logging.info("Flats trimmed")
 
-    trimmer_data = trimmer(Path2Data, Path('temp/thar_list.txt'), area, flip)
+    trimmer_data = trimmer(Path2Data, Path2Temp.joinpath('thar_list.txt'), area, flip)
     print("ThArs trimmed")
     logging.info("ThArs trimmed")
 
-    trimmer_data = trimmer(Path2Data, Path('temp/obj_list.txt'), area, flip)
+    trimmer_data = trimmer(Path2Data, Path2Temp.joinpath('obj_list.txt'), area, flip)
     print("Objects trimmed")
     logging.info("Objects trimmed")
     print()
@@ -122,38 +137,31 @@ def S_EX(conf):
 
    ####subtract super bias from flats
     print('Start flats cleaning')
-    status = list_subtractor(Path2Temp.joinpath('flat_list.txt'), Path2Data.joinpath(s_bias_name))
+    status = list_subtractor(Path2Temp.joinpath('flat_list.txt'), Path2Data.joinpath(s_bias_name), 'Bias')
     print (f"Flats: {status}")
     logging.info(f"Flats: {status}")
     print()
 
    ####subtract super bias from thars
     print('Start ThArs cleaning')
-    status = list_subtractor(Path2Temp.joinpath('thar_list.txt'), Path2Data.joinpath(s_bias_name))
+    status = list_subtractor(Path2Temp.joinpath('thar_list.txt'), Path2Data.joinpath(s_bias_name), 'Bias')
     print(f"ThAr lamp: {status}")
     logging.info(f"ThAr lamp: {status}")
     print()
 
    ####subtract super bias from objects
     print('Start objects cleaning')
-    status = list_subtractor(Path2Temp.joinpath('obj_CRR_cleaned_list.txt'), Path2Data.joinpath(s_bias_name))
+    status = list_subtractor(Path2Temp.joinpath('obj_CRR_cleaned_list.txt'), Path2Data.joinpath(s_bias_name), 'Bias')
     print(f"Objects: {status}")
     logging.info(f"Objects: {status}")
     print()
 
-    #   Fix CCD cosmetics
-    if conf['mask'] != 'None':
-        print("Fix cosmetics")
-        mask = conf['mask']
-        status = fixpix(Path2Data, Path('temp/flat_list.txt'), mask, area, flip)
-        print("flat frames ... done")
-        logging.info("Cosmetics of flat frames is fixed")
-        status = fixpix(Path2Data, Path('temp/thar_list.txt'), mask, area, flip)
-        print("ThAr frames fixed")
-        logging.info("Cosmetics of ThAr frames is fixed")
-        status = fixpix(Path2Data, Path('temp/obj_CRR_cleaned_list.txt'), mask, area, flip)
-        print("scientific frames ... done")
-        logging.info("Cosmetics of scientific frames is fixed")
+    # Work with darks if provided
+    if os.path.isfile(Path2Temp.joinpath('dark_list.txt')):
+        print('Start subtracting dark current from a series')
+        status = dark_subtractor(Path2Data, Path2Temp, ['flat_list.txt', 'thar_list.txt', 'obj_CRR_cleaned_list.txt'], area, flip, s_bias_name)
+        print(f"Dark subtraction: {status}")
+        logging.info(f"Dark subtraction: {status}")
 
     ####make median super flat, delete old flats
     s_flat_name = conf['s_flat_name']
