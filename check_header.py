@@ -30,6 +30,13 @@ def fill_headers(file_names, device):
         obsalt = 245.       # Altitude of the observatory
         gain = 0.95         # Electronic gain in e-/ADU
         rdnoise = 7.0       # CCD readout noise
+    elif device == 'eshel_tno':
+        obsname = 'TNO'     # Thai National Observatory, Doi Inthanon
+        obslat = 18.573828  # Latitude of the observatory
+        obslon = 98.4817485 # Longitude of the observatory, E
+        obsalt = 2549.        # Altitude of the observatory
+        gain = 0.95         # Electronic gain in e-/ADU
+        rdnoise = 7.0       # CCD readout noise
 
     files, objnames = np.loadtxt(file_names, unpack=True, usecols=(0,1), dtype=str, delimiter=';')
     simbad_session = Simbad()

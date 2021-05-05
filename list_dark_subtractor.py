@@ -3,6 +3,7 @@ import numpy as np
 import logging
 from sys import path
 import os
+import shutil
 
 from trimmer import trimmer
 from medianer import medianer
@@ -34,8 +35,8 @@ def process_block(Path2Data, Path2Temp, list_names, dark_time_exp):
             status = list_subtractor(Path2Temp.joinpath('s_temp_dark_'+str(t)+'s.txt'), Path2Data.joinpath('s_dark_'+str(t)+'s.fits'), 'Dark')
             print(f"Texp = {t} s dark subtraction: {status}")
             logging.info(f"Texp = {t} s dark subtraction: {status}")
+            os.remove(Path2Temp.joinpath('s_temp_dark_'+str(t)+'s.txt'))
             print()
-    os.remove(Path2Temp.joinpath('s_temp_dark_'+str(t)+'s.txt'))
     return None
 
 def dark_subtractor(Path2Data, Path2Temp, lists_names, area, flip, s_bias_name):
@@ -62,7 +63,8 @@ def dark_subtractor(Path2Data, Path2Temp, lists_names, area, flip, s_bias_name):
             print(f"Statistics for super dark file with Texp={t} s: Mean = {sdark_data[0]:.2f} Median = {sdark_data[1]:.2f} Sigma = {sdark_data[2]:.2f}")
             logging.info(f"Statistics for super dark file with Texp={t} s: Mean = {sdark_data[0]:.2f} Median = {sdark_data[1]:.2f} Sigma = {sdark_data[2]:.2f}")
         elif len(idx[0]) == 1:
-            os.copy(dark_fn, Path2Data.joinpath('s_dark_'+str(t)+'s.fits'))
+            np.savetxt(Path2Temp.joinpath('s_dark_'+str(t)+'s.txt'), dark_fn[idx], fmt='%s')
+            shutil.copy(dark_fn[idx][0], Path2Data.joinpath('s_dark_'+str(t)+'s.fits'))
 
     for item in lists_names:
         process_block(Path2Data, Path2Temp, item, dark_time_exp)

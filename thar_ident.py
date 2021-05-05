@@ -3,7 +3,7 @@ import os
 import numpy
 from sys import argv
 
-#from pylab import *
+from pylab import *
 import scipy.ndimage
 from scipy.optimize import curve_fit
 from scipy import optimize

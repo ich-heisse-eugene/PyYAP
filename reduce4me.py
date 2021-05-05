@@ -1,4 +1,4 @@
-Pkg_path = "/path/to/the/directory/with/this/file"
+Pkg_path = "/Users/sea/work/science/PyYAP"
 
 import time
 from datetime import datetime, date, time
@@ -37,7 +37,7 @@ Pkg_path = Path(Pkg_path)
 
 #####################################################################################
 ##parameters
-devices = ['mres', 'eshel_ccs', 'eshel_krt'] # List of valid devices
+devices = ['mres', 'eshel_ccs', 'eshel_krt', 'eshel_tno'] # List of valid devices
 
 #####################################################################################
 ##start here
@@ -181,16 +181,26 @@ def S_EX(conf):
 
     ### Create list of files for averaging to produce the files with distinctive orders
     s_ordim_name = conf['s_ordim_name']
-    with open(Path2Temp.joinpath('obj_CRR_cleaned_list.txt'), 'r') as f:
-        objects_list = f.readlines()
-    f.close()
-    with open(Path2Temp.joinpath('ordim_list.txt'), 'w+') as f:
-        objects_list.append(Path2Data.joinpath(s_flat_name))
-        print(objects_list, file=f)
-    f.close()
-    sordim_data = medianer(Path2Data, Path2Temp.joinpath('obj_CRR_cleaned_list.txt'), s_ordim_name)
-    print("Master image for tracer created")
-    logging.info("Master image for tracer created")
+    if 's_ordim_method' in conf:      #  Valid methods: 'hybrid', 'flats', 'objects'
+        s_ordim_method = str(conf['s_ordim_method'])
+    else:
+        s_ordim_method = 'hybrid'
+    objects_list = []
+    if s_ordim_method == 'hybrid' or s_ordim_method == 'objects':
+        with open(Path2Temp.joinpath('ordim_list.txt'), 'w+') as f:
+            with open(Path2Temp.joinpath('obj_CRR_cleaned_list.txt'), 'r') as ff:
+                objects_list = ff.readlines()
+            ff.close()
+            if s_ordim_method == 'hybrid':
+                objects_list.append(Path2Data.joinpath(s_flat_name))
+            print(objects_list, file=f)
+            sordim_data = medianer(Path2Data, Path2Temp.joinpath('obj_CRR_cleaned_list.txt'), s_ordim_name)
+        f.close()
+    print(f"Method: {s_ordim_method}")
+    if s_ordim_method == 'flats':
+        shutil.copy2(Path2Data.joinpath(s_flat_name), Path2Data.joinpath(s_ordim_name))
+    print(f"Master image {s_ordim_name} for the tracer was created using the method '{s_ordim_method}'")
+    logging.info(f"Master image {s_ordim_name} for the tracer was created using the method '{s_ordim_method}'")
 
     ##trace orders
     print("Start orders trace")
@@ -343,10 +353,10 @@ def S_EX(conf):
            ##save new WL solution to archive
             dt=datetime.now()
             dt=dt.strftime("%y-%m-%dT%H-%M")
-            shutil.copy(name, Path('Old_Thars/' + dt + '_thar.fits'))
-            shutil.copy(name.replace('_ec', '_err'), Path('Old_Thars/' + dt + '_thar_err.fits'))
-            shutil.copy(os.path.splitext(name)[0] + "_disp.txt", Path('Old_Thars/' + dt + '_thar_disp.txt'))
-            shutil.copy(os.path.splitext(name)[0] + "_features.txt", Path('Old_Thars/' + dt + '_thar_features.txt'))
+            shutil.copy2(name, Path('Old_Thars/' + dt + '_thar.fits'))
+            shutil.copy2(name.replace('_ec', '_err'), Path('Old_Thars/' + dt + '_thar_err.fits'))
+            shutil.copy2(os.path.splitext(name)[0] + "_disp.txt", Path('Old_Thars/' + dt + '_thar_disp.txt'))
+            shutil.copy2(os.path.splitext(name)[0] + "_features.txt", Path('Old_Thars/' + dt + '_thar_features.txt'))
             print()
     f.close()
     print()
@@ -357,7 +367,7 @@ def S_EX(conf):
     os.remove(Path2Data.joinpath('thar_last.fits'))
     dt=datetime.now()
     dt=dt.strftime("%y-%m-%dT%H-%M")
-    shutil.copy(Path2Temp.joinpath('traces.txt'), Path('Old_Thars/' + dt + '_traces.txt'))
+    shutil.copy2(Path2Temp.joinpath('traces.txt'), Path('Old_Thars/' + dt + '_traces.txt'))
 
     ##search nearest thar for every image and apply WL solution
     obj_list = Path2Temp.joinpath('obj_extracted.txt')                      #name of list with objects
