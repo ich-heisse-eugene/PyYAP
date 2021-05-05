@@ -5,7 +5,7 @@ Further development of PySEX pipeline, originally written by Vadim Krushinsky (U
 - internal (sys, os, warnings, math, shutil, datetime, types, datetime, types, time, copy, logging).
 - external (astropy, numpy, matplotlib, PyAstronomy, scipy, scikit-image, sklearn, astroquery, argparse).
 
-The current version of the pipeline is designed for reduction of echelle spectra coming from the Medium Resolution Echelle Spectrograph (MRES) of the 2.4-m Thai National Telescope and eShel spectrographs installed on the NARIT telescopes in Chachoengsao and Korat (Thailand). The package was independently tested on machines running Debian Linux Sid, macOS Big Sur and Windows 10.
+The current version of the pipeline is designed for reduction of echelle spectra coming from the Medium Resolution Echelle Spectrograph (MRES) of the 2.4-m Thai National Telescope and eShel spectrographs installed on the NARIT telescopes in Chachoengsao, Korat and Doi Inthanon (Thailand). The package was independently tested on machines running Debian Linux Sid, macOS Big Sur and Windows 10.
 
 To install the package unpack the archive in the preferred place and set its path in the first line of file reduce4me.py (variable Pkg_path).
 
