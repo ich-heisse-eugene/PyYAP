@@ -1,4 +1,4 @@
-Pkg_path = "/Volumes/DATA0/work/pipelines/PyYAP"
+Pkg_path = "/Path/to/the/directory/with/this/file"
 
 import time
 from datetime import datetime, date, time
