@@ -11,7 +11,7 @@ def thar_manager(obj_name, thar_list):
     prihdr = hdulist[0].header
     hdulist.close()
     obs_time = datetime.strptime(prihdr['DATE-OBS'], "%Y-%m-%dT%H:%M:%S.%f") # Normally 'DATE-OBS'
-    exptime = timedelta(seconds = int(prihdr['EXPOSURE']))
+    exptime = timedelta(seconds = int(prihdr['EXPTIME']))
     middle_time = obs_time + exptime/2.
     print(f"File: {obj_name}, Middle: {datetime.strftime(middle_time, '%Y-%m-%d %H:%M:%S')[:-3]}")
     logging.info(f"File: {obj_name}, Middle: {datetime.strftime(middle_time, '%Y-%m-%d %H:%M:%S')[:-3]}")

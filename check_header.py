@@ -37,6 +37,13 @@ def fill_headers(file_names, device):
         obsalt = 2549.        # Altitude of the observatory
         gain = 0.95         # Electronic gain in e-/ADU
         rdnoise = 7.0       # CCD readout noise
+    elif device == 'maestro':
+        obsname = 'Terskol' # Terskol Observatory, Mt. Elbrus, Russia
+        obslat = 43.272777  # Latitude of the observatory
+        obslon = 42.500000  # Longitude of the observatory, E
+        obsalt = 3100.      # Altitude of the observatory
+        gain = 1.0          # Electronic gain in e-/ADU
+        rdnoise = 4.0       # CCD readout noise
 
     files, objnames = np.loadtxt(file_names, unpack=True, usecols=(0,1), dtype=str, delimiter=';')
     simbad_session = Simbad()
@@ -56,7 +63,11 @@ def fill_headers(file_names, device):
                 tm_start = Time.Time(hdr['DATE-OBS'])
             elif 'FRAME' in hdr:
                 tm_start = Time.Time(hdr['FRAME'])
-            texp = hdr['EXPOSURE'] * u.s
+            if 'EXPOSURE' in hdr:
+                texp = hdr['EXPOSURE'] * u.s
+                hdr.set('EXPTIME', hdr['EXPOSURE'], 'Exposure (s)')
+            else:
+                texp = hdr['EXPTIME'] * u.s
             tm_mid = tm_start + texp/2.
             tm_end = tm_start + texp
             ut = tm_mid.ymdhms[3] + tm_mid.ymdhms[4]/60. + tm_mid.ymdhms[5]/3600.

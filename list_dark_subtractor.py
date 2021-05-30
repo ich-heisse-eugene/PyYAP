@@ -21,8 +21,6 @@ def parse_exposures(Path2Temp, list_names):
                 hdr = hdu[0].header
                 if 'EXPTIME' in hdr:
                     obj_exp = np.append(obj_exp, int(hdr['EXPTIME']))
-                elif 'EXPOSURE' in hdr:
-                    obj_exp = np.append(obj_exp, int(hdr['EXPOSURE']))
     return obj_exp, obj_fn
 
 def process_block(Path2Data, Path2Temp, list_names, dark_time_exp):

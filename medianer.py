@@ -26,8 +26,8 @@ def medianer(dir_name, list_name, out_name):
                 _time.append(time.mktime(time.strptime(prihdr['DATE-OBS']+'.0', "%Y-%m-%dT%H:%M:%S.%f")))
             tm = Time.Time(prihdr['DATE-OBS'])
             JD1.append(tm.jd)
-            JD2.append(tm.jd + prihdr['EXPOSURE']/2./86400.)
-            JD3.append(tm.mjd + prihdr['EXPOSURE']/2./86400.)
+            JD2.append(tm.jd + prihdr['EXPTIME']/2./86400.)
+            JD3.append(tm.mjd + prihdr['EXPTIME']/2./86400.)
     f.close()
 
     ##mean time

@@ -1,4 +1,4 @@
-Pkg_path = "/path/to/the/directory/containing/this/file"
+Pkg_path = "/Volumes/DATA0/work/pipelines/PyYAP"
 
 import time
 from datetime import datetime, date, time
@@ -37,7 +37,7 @@ Pkg_path = Path(Pkg_path)
 
 #####################################################################################
 ##parameters
-devices = ['mres', 'eshel_ccs', 'eshel_krt', 'eshel_tno'] # List of valid devices
+devices = ['mres', 'eshel_ccs', 'eshel_krt', 'eshel_tno', 'maestro'] # List of valid devices
 
 #####################################################################################
 ##start here
@@ -180,27 +180,32 @@ def S_EX(conf):
     logging.info(f"Super ThArs saved in {thars}")
 
     ### Create list of files for averaging to produce the files with distinctive orders
-    s_ordim_name = conf['s_ordim_name']
+    s_ordim_name = conf['s_ordim_name'].rstrip()
     if 's_ordim_method' in conf:      #  Valid methods: 'hybrid', 'flats', 'objects'
-        s_ordim_method = str(conf['s_ordim_method'])
+        s_ordim_method = conf['s_ordim_method'].rstrip()
     else:
-        s_ordim_method = 'hybrid'
-    objects_list = []
-    if s_ordim_method == 'hybrid' or s_ordim_method == 'objects':
-        with open(Path2Temp.joinpath('ordim_list.txt'), 'w+') as f:
-            with open(Path2Temp.joinpath('obj_CRR_cleaned_list.txt'), 'r') as ff:
-                objects_list = ff.readlines()
-            ff.close()
-            if s_ordim_method == 'hybrid':
-                objects_list.append(Path2Data.joinpath(s_flat_name))
-            print(objects_list, file=f)
-            sordim_data = medianer(Path2Data, Path2Temp.joinpath('obj_CRR_cleaned_list.txt'), s_ordim_name)
-        f.close()
+        s_ordim_method = "hybrid"
     print(f"Method: {s_ordim_method}")
+    objects_list = []
+    if s_ordim_method == "hybrid" or s_ordim_method == "objects":
+        with open(Path2Temp.joinpath('obj_CRR_cleaned_list.txt'), 'r') as ff:
+            objects_list = ff.read().splitlines()
+            ff.close()
+        if s_ordim_method == "hybrid":
+            objects_list.append(Path2Data.joinpath(s_flat_name))
+        with open(Path2Temp.joinpath('ordim_list.txt'), 'w+') as f:
+            print(*objects_list, sep='\n', file=f)
+            f.close()
+        sordim_data = medianer(Path2Data, Path2Temp.joinpath('ordim_list.txt'), Path2Data.joinpath(s_ordim_name))
     if s_ordim_method == 'flats':
         shutil.copy2(Path2Data.joinpath(s_flat_name), Path2Data.joinpath(s_ordim_name))
-    print(f"Master image {s_ordim_name} for the tracer was created using the method '{s_ordim_method}'")
-    logging.info(f"Master image {s_ordim_name} for the tracer was created using the method '{s_ordim_method}'")
+    if os.path.isfile(Path2Data.joinpath(s_ordim_name)):
+        print(f"Master image {s_ordim_name} for the tracer was created using the method '{s_ordim_method}'")
+        logging.info(f"Master image {s_ordim_name} for the tracer was created using the method '{s_ordim_method}'")
+    else:
+        print(f"Error: File {s_ordim_name} for the tracer was not created using the method '{s_ordim_method}'")
+        logging.info(f"Error: File {s_ordim_name} for the tracer was not created using the method '{s_ordim_method}'")
+        exit(1)
 
     ##trace orders
     print("Start orders trace")
@@ -516,7 +521,6 @@ if __name__ == "__main__":
         conf['view'] = args.view
     if args.extractonly:
         conf['calibrate'] = 'False'
-
     if conf['mask'].strip() != 'None':
         if not os.path.isfile(Data_path.joinpath(conf['mask'].strip())):
             conf['mask'] = Pkg_path.joinpath('devices', args.device, conf['mask'].strip())
