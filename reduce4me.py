@@ -1,4 +1,4 @@
-Pkg_path = "/Path/to/the/directory/with/this/file"
+Pkg_path = "/Users/sea/work/science/programming/pipelines/PyYAP"
 
 import time
 from datetime import datetime, date, time
@@ -87,6 +87,7 @@ def S_EX(conf):
 
    ####trim overscan and flip spectra
     flip = conf['flip']
+    area = list(map(int, conf['area'].strip('][').split(',')))
     print("Trim overscan and flip image")
 
     #   Fix CCD cosmetics
@@ -99,11 +100,10 @@ def S_EX(conf):
         status = fixpix(Path2Data, Path2Temp.joinpath('thar_list.txt'), mask, area, flip)
         print("ThAr frames fixed")
         logging.info("Cosmetics of ThAr frames is fixed")
-        status = fixpix(Path2Data, Path2Temp,joinpath('obj_CRR_cleaned_list.txt'), mask, area, flip)
+        status = fixpix(Path2Data, Path2Temp.joinpath('obj_list.txt'), mask, area, flip)
         print("scientific frames ... done")
         logging.info("Cosmetics of scientific frames is fixed")
 
-    area = list(map(int, conf['area'].strip('][').split(',')))
     trimmer_data = trimmer(Path2Data, Path2Temp.joinpath('bias_list.txt'), area, flip)
     print("Biases trimmed")
     logging.info("Biases trimmed")
@@ -180,7 +180,10 @@ def S_EX(conf):
     logging.info(f"Super ThArs saved in {thars}")
 
     ### Create list of files for averaging to produce the files with distinctive orders
-    s_ordim_name = conf['s_ordim_name'].rstrip()
+    if 's_ordim_name' in conf:
+        s_ordim_name = conf['s_ordim_name'].rstrip()
+    else:
+        s_ordim_name = 's_ordim.fits'
     if 's_ordim_method' in conf:      #  Valid methods: 'hybrid', 'flats', 'objects'
         s_ordim_method = conf['s_ordim_method'].rstrip()
     else:
