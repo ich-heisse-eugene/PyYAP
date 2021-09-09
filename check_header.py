@@ -54,11 +54,14 @@ def fill_headers(file_names, device):
         objnames[ii] = objnames[ii].strip()
         print(f"File: {files[ii]}\tObjname: {objnames[ii]}")
         with fits.open(files[ii].strip(), mode='update') as hdu:
-            if hdu[0].data.dtype.name != 'uint32':
-                print(f"Scale data from {hdu[0].data.dtype.name} to 'float32'")
-                hdu[0].data = np.float32(hdu[0].data)
             hdr = hdu[0].header
-            data = hdu[0].data
+            if hdr['NAXIS'] == 2:
+                data = hdu[0].data.copy()
+            elif hdr['NAXIS'] == 3:
+                data = hdu[0].data[0].copy()
+            if data.dtype.name != 'uint32':
+                print(f"Scale data from {hdu[0].data.dtype.name} to 'float32'")
+                hdu[0].data = np.float32(data)
             if 'DATE-OBS' in hdr:
                 tm_start = Time.Time(hdr['DATE-OBS'])
             elif 'FRAME' in hdr:

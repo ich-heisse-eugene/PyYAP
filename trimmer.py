@@ -12,10 +12,7 @@ def trimmer(dir_name, list_name, area, flip):
             try:
                 hdulist = pyfits.open(name, mode = 'update', do_not_scale_image_data=True)
                 prihdr = hdulist[0].header
-                if prihdr['NAXIS'] == 2:
-                    data = hdulist[0].data.copy()
-                elif prihdr['NAXIS'] == 3:
-                    data = hdulist[0].data[0].copy()
+                data = hdulist[0].data.copy()
                 hdulist.close()
                 if data.shape[1]>(int(area[1])-int(area[0])) and data.shape[0]>(int(area[3])-int(area[2])):
                     trimmed_data = copy.copy(data[int(area[2]):int(area[3]),int(area[0]):int(area[1])])
