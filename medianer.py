@@ -38,7 +38,10 @@ def medianer(dir_name, list_name, out_name):
     JD3 = numpy.mean(JD3)
     ##median data
     _data=numpy.asarray(_data)
-    out = numpy.median(_data, 0)
+    if str(out_name).find('ordim') != -1:
+        out = numpy.mean(_data, 0)
+    else:
+        out = numpy.median(_data, 0)
     out = numpy.float32(out)
 
     if out_name == 's_bias.fits':
