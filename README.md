@@ -19,7 +19,7 @@ To get help run this:
 python3  /path/to/the/package/reduce4me.py /current/work/directory/with/FITSfiles  --help
 
 Warning:
-1. By default the package is configured for work with data from MRES in the observing season 2020/2021
+1. By default the package is configured for work with data from MRES in the observing season 2021/2022
 2. Before the first run it is mandatory to create in the directory with FITS-files an ASCII file names.txt of the following format:
 
 name-of-bias-file.fits   ;  Bias
@@ -39,4 +39,4 @@ Play with the program or contact me if you need help: esemenko@gmail.com or fb.c
 
 Eugene Semenko
 
-Last update 22 Jan 2021, NARIT
+Last update 07 Nov 2021, NARIT
