@@ -13,7 +13,7 @@ provided by user.
 
 ##################################################################
 def replace_bad_data(img, idx, idy, columns):
-    npix = 5
+    npix = 2
     if columns:
         for y in idy:
             dy = np.arange(y[0]-npix, y[-1]+npix+1, 1, dtype=int)
