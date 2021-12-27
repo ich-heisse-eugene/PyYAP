@@ -49,7 +49,7 @@ def S_EX(conf):
     print('Started at:', start.time())
 
     logging.info("PyYAP - PYthon Yet Another Pipeline\n by Eugene Semenko and Vadim Krushinsky")
-    logging.info('Started at:', start.time())
+    logging.info(f"Started at: {start.time()}")
     logging.info("==========================================")
     logging.info(f"Data in: \'{conf['Path2Data']}\'")
     logging.info(f"Device of origin: {conf['device']}")
