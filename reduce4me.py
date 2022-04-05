@@ -327,7 +327,7 @@ def S_EX(conf):
         if eval(conf['strip']):
             print("Cleaning catalogues...")
             logging.info("Cleaning catalogues...")
-            shutil.rmtree(Path2Data.joinpath('temp'))
+            shutil.rmtree(Path2Data.joinpath('temp'),  ignore_errors=True)
             for filepath in glob.iglob(Path2Data.joinpath('*.*')):
                 os.remove(filepath)
 
@@ -471,8 +471,8 @@ def S_EX(conf):
     if eval(conf['strip']):
         print("Cleaning catalogues...")
         logging.info("Cleaning catalogues...")
-        shutil.rmtree(Path2Data.joinpath('temp'))
-        shutil.rmtree(Path2Data.joinpath('Old_Thars'))
+        shutil.rmtree(Path2Data.joinpath('temp'),  ignore_errors=True)
+        shutil.rmtree(Path2Data.joinpath('Old_Thars'),  ignore_errors=True)
 
     end = datetime.now()
     print(f"Ended at: {end.time()}")
