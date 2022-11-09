@@ -170,7 +170,7 @@ def sl_remover(dir_name, Path2Temp, file_name, ap_file, step, x_order, y_order, 
     scatter_file = Path2Temp.joinpath(os.path.splitext(file_name)[0] + '_SLMap.fits')
     hdu.header['SOURCE'] = file_name
     hdu.header['IMAGETYP'] = 'scattered light'
-    hdu.writeto(scatter_file, clobber=True)
+    hdu.writeto(scatter_file, overwrite=True)
     print(f"Map of the scattered light was saved to {scatter_file}")
     logging.info(f"Map of the scattered light was saved to {scatter_file}")
 
@@ -180,7 +180,7 @@ def sl_remover(dir_name, Path2Temp, file_name, ap_file, step, x_order, y_order, 
     cleared_file = dir_name.joinpath(os.path.splitext(file_name)[0] + '_SLR.fits')
     if subtract:
         prihdr['HISTORY'] = 'scatter light removed'
-    hdulist.writeto(cleared_file, clobber=True)
+    hdulist.writeto(cleared_file, overwrite=True)
     print(f"cleared image saved to {cleared_file}")
     logging.info(f"cleared image saved to {cleared_file}")
 

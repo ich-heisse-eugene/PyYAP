@@ -628,7 +628,7 @@ class Image(Header):
                 hdu[0].header = self.getHeader() # add the primary header to the HDU
                 hdu[0].header['HISTORY'] = 'cosmic cleaned'
                 hdu[0].update_header()
-        hdu.writeto(filename, clobber=True) # write FITS file to disc
+        hdu.writeto(filename, overwrite=True) # write FITS file to disc
 
 
     def replaceMaskMedian(self, box_x, box_y, replace_error=1e20):

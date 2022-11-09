@@ -72,7 +72,7 @@ def medianer(dir_name, list_name, out_name):
 
     hdu = pyfits.PrimaryHDU(out, prihdr)
     hdulist = pyfits.HDUList([hdu])
-    hdulist.writeto(dir_name.joinpath(out_name), clobber = True)
+    hdulist.writeto(dir_name.joinpath(out_name), overwrite = True)
 
     if out_name == 's_bias.fits' or out_name == 's_flat.fits':
         with open(list_name, 'r') as f:

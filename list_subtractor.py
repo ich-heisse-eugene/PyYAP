@@ -24,7 +24,7 @@ def list_subtractor(list_name, subtrahend_name, stype):
                 prihdr['HISTORY'] = stype+' subtracted'
                 hdu = pyfits.PrimaryHDU(data, prihdr)
                 hdulist = pyfits.HDUList([hdu])
-                hdulist.writeto(name, clobber=True)
+                hdulist.writeto(name, overwrite=True)
             else:
                 print ("Frame", name, "has wrong size")
     f.close()

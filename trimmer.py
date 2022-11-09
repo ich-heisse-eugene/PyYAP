@@ -30,7 +30,7 @@ def trimmer(dir_name, list_name, area, flip):
                     prihdr['HISTORY'] = 'overscan trimmed'
                     prihdr['HISTORY'] = 'Data flipped along '+flip
                     try:
-                        hdulist.writeto(name, clobber=True)
+                        hdulist.writeto(name, overwrite=True)
                     except IOError:
                         print(f"ERROR: Can't write file {name}")
                 else:

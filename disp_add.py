@@ -125,7 +125,7 @@ def disp_add(fits_name, thar_name, view):
 
     hdulist[0].data = np.flip(spectrum, axis=0)
     new_name = os.path.splitext(fits_name)[0]  + "_WCS.fits"
-    hdulist.writeto(new_name, clobber=True)
+    hdulist.writeto(new_name, overwrite=True)
 
     if view:
         matplotlib.pyplot.show()
