@@ -272,7 +272,7 @@ def thar_auto(dir_name, file_name, OS, X_Order, Y_Order, view):
     # global Y_Order
     # Y_Order = 6                                     #Y (cross dispersion) order of global 2D polynome
     global max_shift
-    max_shift = 50                                  #max shift in pix for automatic identification
+    max_shift = 20                                  #max shift in pix for automatic identification
     thar = []           #full list with thar faetures
     zero_features = []  #list with features for first identification
 
