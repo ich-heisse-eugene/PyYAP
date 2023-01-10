@@ -162,7 +162,7 @@ def plot_order(w, r, ordnum):
     if ordnum == -99:
         for i in range(nord):
             ax.plot(w[i], r[i], lw=0.9, ls='-')
-    elif ordnum > 0 and ordnum < nord-1:
+    elif ordnum >= 0 and ordnum <= nord-1:
         ax.plot(w[ordnum], r[ordnum], ls='-', lw=0.9, color='red')
     else:
         print("Wrong number of the order")
