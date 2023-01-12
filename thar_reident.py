@@ -294,8 +294,8 @@ def thar_auto(dir_name, file_name, OS, X_Order, Y_Order, view):
 
     #read short file with features
     if  os.path.exists(old_thar_features):
-        print('File ', old_thar_features, ' founded')
-        logging.info(f"File {old_thar_features} founded")
+        print('File ', old_thar_features, ' found')
+        logging.info(f"File {old_thar_features} found")
         with open(old_thar_features, 'r') as f:
             for line in f:
                 one_str = line.rsplit('\t')
