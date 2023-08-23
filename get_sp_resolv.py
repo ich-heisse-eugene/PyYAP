@@ -208,7 +208,7 @@ def resol_in_order(wave, spec, n):
     return res, wl, dwl, x, y
 
 def fit_line(w, y):
-    gauss = lambda x,a,b,c,d: a*np.exp(-((x - b)/(2.*c))**2) + d
+    gauss = lambda x,a,b,c,d: a*np.exp(-(x - b)**2/(2. * c**2)) + d
     dlam = (w[-1] - w[0]) / len(w)
     x_out = []
     y_out = []
@@ -218,7 +218,7 @@ def fit_line(w, y):
     except Exception:
         return -1, -1, -1, x_out, y_out
     else:
-        fwhm = 2*np.sqrt(2*np.log2(2))*popt[2]
+        fwhm = 2*np.sqrt(2*np.log(2))*popt[2]
         if fwhm >= 2*dlam and fwhm <= 6*dlam:
             res_fwhm = int(popt[1] / fwhm)
             x_cen = (w - popt[1]) / dlam
