@@ -27,7 +27,7 @@ def order_tracer(dir_name, file_name, X_half_width, step, min_height, aperture, 
     ordim = hdulist[0].data.copy()
     hdulist.close()
 
-    trace_im = np.zeros((ordim.shape[0], ordim.shape[1]), dtype=np.float)
+    trace_im = np.zeros((ordim.shape[0], ordim.shape[1]), dtype=float)
 
     # Search for local maxima in the cross sections and construct the mask of orders. 1 - max, 0 - rest of pixels
     for x_t in range(X_half_width, ordim.shape[1]-X_half_width, X_half_width):

@@ -94,11 +94,11 @@ def detCos(image,  out_clean,
     if img._mask!=None:
         mask_orig=img.getMask()
     else:
-        mask_orig=numpy.zeros(img.getDim(), dtype=numpy.bool)
+        mask_orig=numpy.zeros(img.getDim(), dtype=bool)
 
     # create a new Image instance to store the initial data array
     img_original = Image(data=img.getData(), header=img.getHeader(), error = img.getError(),  mask=mask_orig)
-    img.setData(mask=numpy.zeros(img.getDim(), dtype=numpy.bool))
+    img.setData(mask=numpy.zeros(img.getDim(), dtype=bool))
     img.removeError()
 
     # estimate Poisson noise after roughly cleaning cosmics using a median filter
@@ -111,7 +111,7 @@ def detCos(image,  out_clean,
 
 
     # create empty mask
-    select = numpy.zeros(img.getDim(),dtype=numpy.bool)
+    select = numpy.zeros(img.getDim(),dtype=bool)
 
     # define Laplacian convolution kernal
     LA_kernel=numpy.array([[0,-1,0,],[-1,4,-1],[0,-1,0]])/4.0
