@@ -1,4 +1,4 @@
-Pkg_path = "/Volumes/DATA_EXT/WORK/MRES/Eug/PyYAP_20231120"
+Pkg_path = "/Path/to/this/file"
 
 import time
 from datetime import datetime, date, time
