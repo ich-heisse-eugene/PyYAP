@@ -39,7 +39,7 @@ def order_tracer(dir_name, file_name, X_half_width, step, min_height, aperture, 
     ones = np.array(np.where(trace_im==1))
     ord_mask = ones.T
     model = AgglomerativeClustering(n_clusters=None,
-                                    affinity='euclidean',
+                                    metric='euclidean',
                                     linkage='single',
                                     compute_full_tree=True,
                                     distance_threshold=5)

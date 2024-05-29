@@ -699,7 +699,7 @@ class Image(Header):
         else:
             new_error = None
         if self._mask is not None:
-            new_mask= ndimage.interpolation.zoom(self._mask, factor, output="bool", order=0, prefilter=False)
+            new_mask= ndimage.interpolation.zoom(self._mask, factor, order=0, prefilter=False) # output="bool"
         else:
             new_mask = None
 
