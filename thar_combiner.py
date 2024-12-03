@@ -14,8 +14,8 @@ def thar_combiner(dir_name, thar_list):
             name = line.strip()
             prihdr = pyfits.getheader(name)
             thar_name.append(name.split(os.sep)[-1])
-            print(prihdr['DATE'])
-            thar_time.append(time.mktime(time.strptime(prihdr['DATE'], "%Y-%m-%dT%H:%M:%S")))#.%f
+            print(prihdr['DATE-OBS'])
+            thar_time.append(time.mktime(time.strptime(prihdr['DATE-OBS'], "%Y-%m-%dT%H:%M:%S")))#.%f
     f.close()
     print()
 

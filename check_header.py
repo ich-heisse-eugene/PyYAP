@@ -14,21 +14,21 @@ def fill_headers(file_names, device):
         obslat = 18.573828  # Latitude of the observatory
         obslon = 98.4817485 # Longitude of the observatory, E
         obsalt = 2549.      # Altitude of the observatory
-        gain = 0.55         # Electronic gain in e-/ADU
+        gain = 0.55            # Electronic gain in e-/ADU
         rdnoise = 2.0       # CCD readout noise
     elif device == 'eshel_ccs':
         obsname = 'CCS'     # NARIT provincial observatory, Chachoengsao
         obslat = 13.593682  # Latitude of the observatory
         obslon = 101.256209 # Longitude of the observatory, E
         obsalt = 11.        # Altitude of the observatory
-        gain = 0.95         # Electronic gain in e-/ADU
+        gain = 0.95            # Electronic gain in e-/ADU
         rdnoise = 7.0       # CCD readout noise
     elif device == 'eshel_krt':
         obsname = 'KRT'     # NARIT provincial observatory, Korat
         obslat = 14.873460  # Latitude of the observatory
         obslon = 102.02883  # Longitude of the observatory, E
         obsalt = 245.       # Altitude of the observatory
-        gain = 0.95         # Electronic gain in e-/ADU
+        gain = 0.55            # Electronic gain in e-/ADU
         rdnoise = 7.0       # CCD readout noise
     elif device == 'eshel_tno':
         obsname = 'TNO'     # Thai National Observatory, Doi Inthanon
@@ -36,6 +36,13 @@ def fill_headers(file_names, device):
         obslon = 98.4817485 # Longitude of the observatory, E
         obsalt = 2549.        # Altitude of the observatory
         gain = 0.95         # Electronic gain in e-/ADU
+        rdnoise = 7.0       # CCD readout noise
+    elif device == 'eshel2':
+        obsname = 'TNO'     # Thai National Observatory, Doi Inthanon
+        obslat = 18.573828  # Latitude of the observatory
+        obslon = 98.4817485 # Longitude of the observatory, E
+        obsalt = 2549.        # Altitude of the observatory
+        gain = 0.55          # Electronic gain in e-/ADU
         rdnoise = 7.0       # CCD readout noise
     elif device == 'maestro':
         obsname = 'Terskol' # Terskol Observatory, Mt. Elbrus, Russia
