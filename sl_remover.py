@@ -2,6 +2,7 @@ import astropy.io.fits as pyfits
 import os
 import shutil
 import numpy as np
+from numpy.polynomial.chebyshev import chebval
 
 import logging
 
@@ -17,33 +18,45 @@ import warnings
 warnings.simplefilter("ignore")
 
 ##################################################################
+
+def read_traces(x_coo, ap_file):
+    Y = []
+    FWHM = []
+    with open(ap_file, 'r') as fp:
+        f = fp.readlines()
+        p = f[3].strip().rsplit()
+        if len(p) == 4:
+            n_orders = int(p[0]); poly_order = int(p[1])
+            adaptive = p[2]; ap_size = float(p[3])
+        else:
+            print("Problem of reading the file with traces")
+        if adaptive == 'True':
+            for i in range(4, 4+n_orders):
+                p = f[i].strip().rsplit()
+                poly_trace_coef = np.asarray(p[3:3+poly_order+1], dtype=float)
+                poly_width_coef = np.asarray(p[3+poly_order+1:], dtype=float)
+                Y.append(chebval(x_coo, poly_trace_coef))
+                FWHM.append(chebval(x_coo, poly_width_coef))
+        else:
+            for i in range(4, 4+n_orders):
+                p = f[i].strip().rsplit()
+                poly_trace_coef = np.asarray(p[3:3+poly_order+1], dtype=float)
+                Y.append(chebval(x_coo, poly_trace_coef))
+                FWHM.append(np.repeat(float(p[3+poly_order+1]), len(x_coo)))
+        print(f"{n_orders} orders read from file")
+    return np.asarray(Y), np.asarray(FWHM)
+
 def sl_remover(dir_name, Path2Temp, file_name, ap_file, step, x_order, y_order, subtract, view):
     print(f"scatter light removing for {file_name} started")
     logging.info(f"scatter light removing for {file_name} started")
-    orders = []
-    Center = []
 
-    #read apertures file
-    ii=0
-    with open(ap_file, 'r') as f:
-        for line in f:
-            one_str = line.rsplit('\t')
-            if one_str[0]=='Order':
-                if ii!=0:
-                    Center=np.array(Center)
-                    orders.append(Center)
-                    Center = []
-                ii=ii+1
-            if one_str[0]!='Order':
-                Center.append(float(one_str[0]))
+    #read image file
+    hdulist = pyfits.open(dir_name.joinpath(file_name))
+    arr = hdulist[0].data.copy()
+    prihdr = hdulist[0].header
+    hdulist.close()
 
-    Center=np.asarray(Center)
-    orders.append(Center)
-    f.close()
-
-    print(f"{ii} orders read from file")
-
-    orders = np.asarray(orders)
+    orders, _ = read_traces(np.arrange(arr.shape[1]), ap_file)
 
     X = []
     #calculate middle line for 2 close orders
@@ -61,12 +74,6 @@ def sl_remover(dir_name, Path2Temp, file_name, ap_file, step, x_order, y_order, 
 
     print(f"{Y.shape[1]} x {Y.shape[0]} points for scatter light interpolation")
     logging.info(f"{Y.shape[1]} x {Y.shape[0]} points for scatter light interpolation")
-
-    #read image file
-    hdulist = pyfits.open(dir_name.joinpath(file_name))
-    arr = hdulist[0].data.copy()
-    prihdr = hdulist[0].header
-    hdulist.close()
 
     x=background_X.tolist()
     XX = np.array([x for i in Y[:,0]])

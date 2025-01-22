@@ -1,4 +1,4 @@
-Pkg_path = "/Path/to/this/file"
+Pkg_path = "/home/eugene/PyYAP"
 
 import time
 from datetime import datetime, date, time
@@ -28,7 +28,7 @@ from disp_add import disp_add
 from get_sp_resolv import get_sp_resolv
 from update_snr import update_snr
 
-##disable warnings
+## Disable warnings
 import warnings
 warnings.simplefilter("ignore")
 warnings.filterwarnings("ignore")
@@ -36,11 +36,11 @@ warnings.filterwarnings("ignore")
 Pkg_path = Path(Pkg_path)
 
 #####################################################################################
-##parameters
-devices = ['mres', 'eshel_ccs', 'eshel_krt', 'eshel_tno', 'maestro'] # List of valid devices
+## Parameters
+devices = ['mres', 'eshel_ccs', 'eshel_krt', 'eshel_tno', 'maestro', 'umres'] # List of valid devices
 
 #####################################################################################
-##start here
+## Let's get started
 def S_EX(conf):
     logging.basicConfig(filename = Path(conf['Path2Data']).joinpath('pyyap_journal.log'), level=logging.INFO, format='%(asctime)s %(message)s')
     logging.getLogger("matplotlib").propagate = False
@@ -69,28 +69,28 @@ def S_EX(conf):
     Path2Data = Path(conf['Path2Data'])
     Path2Raw = Path2Data.joinpath('raw')
 
-    ####make directory for saving of raw frames
+    #### Make directory for backing up the raw frames
     if not os.path.exists(Path2Raw):
         os.makedirs(Path2Raw)
 
     Path2Temp = Path2Data.joinpath('temp')
-    ####make directory for saving of raw frames
+    #### Make directory for saving of raw frames
     if not os.path.exists(Path2Temp):
         os.makedirs(Path2Temp)
 
-    ##check directory, create four lists: biases, thars, flats and objects
+    ## Check directories, create four lists with biases, thars, flats, and objects
     files = lister(Path2Data, Path2Raw, Path2Temp)
     if files != None:
         print ('Lists created')
         logging.info('Lists created')
         print()
 
-   ####trim overscan and flip spectra
+   #### Trim overscan and flip spectra
     flip = conf['flip']
     area = list(map(int, conf['area'].strip('][').split(',')))
     print("Trim overscan and flip image")
 
-    #   Fix CCD cosmetics
+    ##### Fix CCD cosmetics
     if conf['mask'] != 'None':
         print("Fix cosmetics")
         mask = conf['mask']
@@ -121,13 +121,13 @@ def S_EX(conf):
     logging.info("Objects trimmed")
     print()
 
-    ##remove cosmic hits from images
+    ## Remove cosmic hits from images
     status = list_cosmo_cleaner(Path2Temp, 'obj_list.txt', 'obj_CRR_cleaned_list.txt')
     print(f"Objects {status}")
     logging.info(f"Objects {status}")
     print()
 
-    ##make median super bias, delete old biases
+    ## Create super bias and delete original files
     s_bias_name = conf['s_bias_name']
     print('Create super bias')
     sbias_data = medianer (Path2Data, Path2Temp.joinpath('bias_list.txt'), s_bias_name)
@@ -135,21 +135,21 @@ def S_EX(conf):
     logging.info(f"Super bias statistic: Mean = {sbias_data[0]:.2f} Median = {sbias_data[1]:.2f} Sigma = {sbias_data[2]:.2f}")
     print()
 
-   ####subtract super bias from flats
+   #### Subtract super bias from flats
     print('Start flats cleaning')
     status = list_subtractor(Path2Temp.joinpath('flat_list.txt'), Path2Data.joinpath(s_bias_name), 'Bias')
     print (f"Flats: {status}")
     logging.info(f"Flats: {status}")
     print()
 
-   ####subtract super bias from thars
+   #### Subtract super bias from thars
     print('Start ThArs cleaning')
     status = list_subtractor(Path2Temp.joinpath('thar_list.txt'), Path2Data.joinpath(s_bias_name), 'Bias')
     print(f"ThAr lamp: {status}")
     logging.info(f"ThAr lamp: {status}")
     print()
 
-   ####subtract super bias from objects
+   #### Subtract super bias from objects
     print('Start objects cleaning')
     status = list_subtractor(Path2Temp.joinpath('obj_CRR_cleaned_list.txt'), Path2Data.joinpath(s_bias_name), 'Bias')
     print(f"Objects: {status}")
@@ -163,7 +163,7 @@ def S_EX(conf):
         print(f"Dark subtraction: {status}")
         logging.info(f"Dark subtraction: {status}")
 
-    ####make median super flat, delete old flats
+    #### Create median super flat and delete old flats
     s_flat_name = conf['s_flat_name']
     print('Start to create super flat')
     sflat_data = medianer (Path2Data, Path2Temp.joinpath('flat_list.txt'), s_flat_name)
@@ -173,55 +173,61 @@ def S_EX(conf):
     logging.info(f"Super flat statistic: Mean = {sflat_data[0]:.2f} Median = {sflat_data[1]:.2f} Sigma = {sflat_data[2]:.2f}")
     print()
 
-   ##make median super ThAr, delete old files
+   ## Create median super ThAr and delete old files
     print('Search nearest ThArs and combine it to super ThArs')
     thars = thar_combiner(Path2Data, Path2Temp.joinpath('thar_list.txt'))
     print(f"Super ThArs saved in {thars}")
     logging.info(f"Super ThArs saved in {thars}")
 
-    ### Create list of files for averaging to produce the files with distinctive orders
-    if 's_ordim_name' in conf:
-        s_ordim_name = conf['s_ordim_name'].rstrip()
-    else:
-        s_ordim_name = 's_ordim.fits'
-    if 's_ordim_method' in conf:      #  Valid methods: 'hybrid', 'flats', 'objects'
-        s_ordim_method = conf['s_ordim_method'].rstrip()
-    else:
-        s_ordim_method = "hybrid"
-    print(f"Method: {s_ordim_method}")
-    objects_list = []
-    if s_ordim_method == "hybrid" or s_ordim_method == "objects":
-        with open(Path2Temp.joinpath('obj_CRR_cleaned_list.txt'), 'r') as ff:
-            objects_list = ff.read().splitlines()
-            ff.close()
-        if s_ordim_method == "hybrid":
-            objects_list.append(Path2Data.joinpath(s_flat_name))
-        with open(Path2Temp.joinpath('ordim_list.txt'), 'w+') as f:
-            print(*objects_list, sep='\n', file=f)
-            f.close()
-        sordim_data = medianer(Path2Data, Path2Temp.joinpath('ordim_list.txt'), Path2Data.joinpath(s_ordim_name))
-    if s_ordim_method == 'flats':
-        shutil.copy2(Path2Data.joinpath(s_flat_name), Path2Data.joinpath(s_ordim_name))
-    if os.path.isfile(Path2Data.joinpath(s_ordim_name)):
-        print(f"Master image {s_ordim_name} for the tracer was created using the method '{s_ordim_method}'")
-        logging.info(f"Master image {s_ordim_name} for the tracer was created using the method '{s_ordim_method}'")
-    else:
-        print(f"Error: File {s_ordim_name} for the tracer was not created using the method '{s_ordim_method}'")
-        logging.info(f"Error: File {s_ordim_name} for the tracer was not created using the method '{s_ordim_method}'")
-        exit(1)
-
-    ##trace orders
-    print("Start orders trace")
     slice_half_width = int(conf['slice_half_width'])
     step = int(conf['step'])
     min_height = int(conf['min_height'])
     aperture = float(conf['aperture'])
     view = eval(conf['view'])
     adaptive = eval(conf['adaptive'])
-    order_tracer(Path2Data, s_ordim_name, slice_half_width, step, min_height, aperture, adaptive, view)
-    shutil.move(os.fspath(Path2Data.joinpath(s_ordim_name)), os.fspath(Path2Temp))
 
-    # remove scatter light
+    ### Create list of files for averaging to produce the files with distinctive orders
+    if 's_ordim_name' in conf:
+        s_ordim_name = conf['s_ordim_name'].rstrip()
+    else:
+        s_ordim_name = 's_ordim.fits'
+    if 's_ordim_method' in conf:      #  Valid methods: 'hybrid', 'flats', 'objects', and 'remap'
+        s_ordim_method = conf['s_ordim_method'].rstrip()
+    else:
+        s_ordim_method = "hybrid"
+    print(f"Method: {s_ordim_method}")
+    if s_ordim_method != "remap":
+        objects_list = []
+        if s_ordim_method == "hybrid" or s_ordim_method == "objects":
+            with open(Path2Temp.joinpath('obj_CRR_cleaned_list.txt'), 'r') as ff:
+                objects_list = ff.read().splitlines()
+                ff.close()
+            if s_ordim_method == "hybrid":
+                objects_list.append(Path2Data.joinpath(s_flat_name))
+            with open(Path2Temp.joinpath('ordim_list.txt'), 'w+') as f:
+                print(*objects_list, sep='\n', file=f)
+                f.close()
+            sordim_data = medianer(Path2Data, Path2Temp.joinpath('ordim_list.txt'), Path2Data.joinpath(s_ordim_name))
+        if s_ordim_method == 'flats':
+            shutil.copy2(Path2Data.joinpath(s_flat_name), Path2Data.joinpath(s_ordim_name))
+        if os.path.isfile(Path2Data.joinpath(s_ordim_name)):
+            print(f"Master image {s_ordim_name} for the tracer was created using the method '{s_ordim_method}'")
+            logging.info(f"Master image {s_ordim_name} for the tracer was created using the method '{s_ordim_method}'")
+        else:
+            print(f"Error: Failed to create a file {s_ordim_name} for the tracing using the method '{s_ordim_method}'")
+            logging.info(f"Error: Failed to create a file {s_ordim_name} for the tracing using the method '{s_ordim_method}'")
+            exit(1)
+
+        ## Trace orders
+        print("Start tracing orders")
+        order_tracer(Path2Data, s_ordim_name, slice_half_width, step, min_height, aperture, adaptive, view)
+        shutil.move(os.fspath(Path2Data.joinpath(s_ordim_name)), os.fspath(Path2Temp))
+    else:
+        print("Using the existing map of orders without modification")
+        logging.info("Using the existing map of orders without modification")
+        shutil.copy2(Pkg_path.joinpath('devices', conf['device'], 'traces.txt'), Path2Temp)
+
+    # Remove scattered light
     subtract = eval(conf['subtract'])
     if subtract:
         x_order = int(conf['x_order'])
@@ -249,7 +255,7 @@ def S_EX(conf):
         flat_name = Path2Data.joinpath('s_flat.fits')
         list_name = Path2Temp.joinpath('obj_CRR_cleaned_list.txt')
 
-    ####extract object
+    #### Extract objects
     ex_type = conf['ex_type']
     s_blaze_name = conf['s_blaze_name']
     ap_file = Path2Temp.joinpath('traces.txt')
@@ -266,8 +272,8 @@ def S_EX(conf):
         logging.info(f"Extracted s_blz spectrum saved in {status}")
         s_blaze_name = status
 
-   ####params:
-    out_list_name = Path2Temp.joinpath('obj_extracted.txt')             #name of list
+   #### params:
+    out_list_name = Path2Temp.joinpath('obj_extracted.txt')
     out_err_list_name = Path2Temp.joinpath('err_extracted.txt')
     f_out=open(out_list_name, 'a')
     fe_out=open(out_err_list_name, 'a')
@@ -287,9 +293,9 @@ def S_EX(conf):
     os.remove(list_name)
     print()
 
-   ####extract ThAr
-    list_name = Path2Temp.joinpath('s_thar_list.txt')                               #name of list with images
-    out_list_name = Path2Temp.joinpath('s_thar_extracted.txt')                      #name of list
+   #### Extract ThAr
+    list_name = Path2Temp.joinpath('s_thar_list.txt')
+    out_list_name = Path2Temp.joinpath('s_thar_extracted.txt')
     f_out=open(out_list_name, 'a')
     with open(list_name, 'r') as f:
         for line in f:
@@ -306,7 +312,7 @@ def S_EX(conf):
     os.remove(list_name)
     print()
 
-    # Exit here in case of extraction without arc calibration
+    # Exit here in case of extraction without wavelength calibration
     if not eval(conf['calibrate']):
         try:
             os.mkdir(Path2Data.joinpath('Reduced'))
@@ -332,20 +338,20 @@ def S_EX(conf):
                 os.remove(filepath)
 
         end = datetime.now()
-        print(f"Ended at: {end.time()}")
-        logging.info(f"Ended at: {end.time()}")
+        print(f"Finished at: {end.time()}")
+        logging.info(f"Finished at: {end.time()}")
         i, d = divmod((end-start).seconds/60, 1)
         print(f"Duration (m:s): {i:3.0f}:{int(d*60)}")
         logging.info(f"Duration (m:s): {i:3.0f}:{int(d*60)}")
         return None
     ### End of the exit point
 
-   ####search and ident lines in thar
-   ####params:
+   #### Search and identify lines in ThAr
+   #### params:
     list_name = Path2Temp.joinpath('s_thar_extracted.txt')                  #name of list with extracted thars
-    shutil.copy2(Pkg_path.joinpath('devices', conf['device'], conf['device']+'_thar.dat'), Path2Data.joinpath('thar.dat'))                  #copy files to working directory
-    shutil.copy2(Pkg_path.joinpath('devices', conf['device'], conf['device']+'_thar_last.dat'), Path2Data.joinpath('thar_last.dat'))        #copy files to working directory
-    shutil.copy2(Pkg_path.joinpath('devices', conf['device'], conf['device']+'_thar_last.fits'), Path2Data.joinpath('thar_last.fits'))      #copy files to working directory
+    shutil.copy2(Pkg_path.joinpath('devices', conf['device'], conf['device']+'_thar.dat'), Path2Data.joinpath('thar.dat'))                  #copy files to the working directory
+    shutil.copy2(Pkg_path.joinpath('devices', conf['device'], conf['device']+'_thar_last.dat'), Path2Data.joinpath('thar_last.dat'))        #copy files to the working directory
+    shutil.copy2(Pkg_path.joinpath('devices', conf['device'], conf['device']+'_thar_last.fits'), Path2Data.joinpath('thar_last.fits'))      #copy files to the working directory
     if not os.path.exists(Path2Data.joinpath('Old_Thars')):
         os.makedirs(Path2Data.joinpath('Old_Thars'))
 
@@ -358,7 +364,7 @@ def S_EX(conf):
             print('Search WL solution for:'+name)
             logging.info("Search WL solution for: {name}")
             thar_auto(Path2Data, name, anr, xord, yord, view)
-           ##save new WL solution to archive
+           ## Save the new WL solution to archive
             dt=datetime.now()
             dt=dt.strftime("%y-%m-%dT%H-%M")
             shutil.copy2(name, Path('Old_Thars/' + dt + '_thar.fits'))
@@ -377,10 +383,10 @@ def S_EX(conf):
     dt=dt.strftime("%y-%m-%dT%H-%M")
     shutil.copy2(Path2Temp.joinpath('traces.txt'), Path('Old_Thars/' + dt + '_traces.txt'))
 
-    ##search nearest thar for every image and apply WL solution
-    obj_list = Path2Temp.joinpath('obj_extracted.txt')                      #name of list with objects
-    obj_err_list = Path2Temp.joinpath('err_extracted.txt')                      #name of list with objects
-    thar_list = Path2Temp.joinpath('s_thar_extracted.txt')                  #name of list with extracted thars
+    ## Search for a nearest calibration for every image and apply the WL solution
+    obj_list = Path2Temp.joinpath('obj_extracted.txt')
+    obj_err_list = Path2Temp.joinpath('err_extracted.txt')
+    thar_list = Path2Temp.joinpath('s_thar_extracted.txt')
 
     # ThAr
     with open(thar_list, 'r') as f:
@@ -394,7 +400,7 @@ def S_EX(conf):
             print()
     f.close()
 
-    # Errors
+    # Variances
     with open(obj_err_list, 'r') as f:
         for line in f:
             name = line.strip()
@@ -406,7 +412,7 @@ def S_EX(conf):
             print()
     f.close()
 
-    # Obj
+    # Objects
     with open(obj_list, 'r') as f:
         for line in f:
             name = line.strip()
@@ -475,8 +481,8 @@ def S_EX(conf):
         shutil.rmtree(Path2Data.joinpath('Old_Thars'),  ignore_errors=True)
 
     end = datetime.now()
-    print(f"Ended at: {end.time()}")
-    logging.info(f"Ended at: {end.time()}")
+    print(f"Finished at: {end.time()}")
+    logging.info(f"Finished at: {end.time()}")
     i, d = divmod((end-start).seconds/60, 1)
     print(f"Duration (m:s): {i:3.0f}:{int(d*60)}")
     logging.info(f"Duration (m:s): {i:3.0f}:{int(d*60)}")

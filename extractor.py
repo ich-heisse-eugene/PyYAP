@@ -1,6 +1,7 @@
 import astropy.io.fits as pyfits
 import os
 import numpy as np
+from numpy.polynomial.chebyshev import chebval
 import scipy.interpolate
 import shutil
 
@@ -16,6 +17,34 @@ import warnings
 warnings.simplefilter("ignore")
 
 ##################################################################
+
+def read_traces(x_coo, ap_file):
+    Y = []
+    FWHM = []
+    with open(ap_file, 'r') as fp:
+        f = fp.readlines()
+        p = f[3].strip().rsplit()
+        if len(p) == 4:
+            n_orders = int(p[0]); poly_order = int(p[1])
+            adaptive = p[2]; ap_size = float(p[3])
+        else:
+            print("Problem of reading the file with traces")
+        if adaptive == 'True':
+            for i in range(4, 4+n_orders):
+                p = f[i].strip().rsplit()
+                poly_trace_coef = np.asarray(p[3:3+poly_order+1], dtype=float)
+                poly_width_coef = np.asarray(p[3+poly_order+1:], dtype=float)
+                Y.append(chebval(x_coo, poly_trace_coef))
+                FWHM.append(chebval(x_coo, poly_width_coef))
+        else:
+            for i in range(4, 4+n_orders):
+                p = f[i].strip().rsplit()
+                poly_trace_coef = np.asarray(p[3:3+poly_order+1], dtype=float)
+                Y.append(chebval(x_coo, poly_trace_coef))
+                FWHM.append(np.repeat(float(p[3+poly_order+1]), len(x_coo)))
+        print(f"{n_orders} orders read from file")
+    return np.asarray(Y), np.asarray(FWHM)
+
 def fox(file_name, sflat_image, ap_file, ex_type, aperture):
 
     print(f"Extraction spectra from {file_name} started")
@@ -52,37 +81,7 @@ def fox(file_name, sflat_image, ap_file, ex_type, aperture):
     if s_flat_data.shape[0]!=spectra_data.shape[0] or s_flat_data.shape[1]!=spectra_data.shape[1]:
         return (None)
 
-    orders = []
-    width = []
-    X = []
-    Y = []
-    #read apertures file
-    ii=0
-    with open(ap_file, 'r') as f:
-        for line in f:
-            one_str = line.rsplit('\t')
-            if one_str[0]=='Order':
-                if ii!=0:
-                    X=np.array(X)
-                    Y=np.array(Y)
-                    orders.append(X)
-                    width.append(Y)
-                    X = []
-                    Y = []
-                ii=ii+1
-            if one_str[0]!='Order':
-                X.append(float(one_str[0]))
-                Y.append(float(one_str[1]))
-    X=np.array(X)
-    Y=np.array(Y)
-    orders.append(X)
-    width.append(Y)
-    X = []
-    Y = []
-    f.close()
-    print(ii, "orders read from file")
-    orders = np.array(orders) #array with apretures
-    width = np.array(width)
+    orders, width = read_traces(np.arange(s_flat_data.shape[1]), ap_file)
 
     s_flat_data = np.clip(s_flat_data, 0, 65000)
     spectra_data = np.clip(spectra_data, 0, 65000)

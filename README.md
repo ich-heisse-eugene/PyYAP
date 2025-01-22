@@ -3,7 +3,7 @@ Yet Another Pipeline in Python for echelle data reduction
 
 Further development of PySEX pipeline, originally written by Vadim Krushinsky (Ural Federal University, Ekaterinburg, Russia) for reduction of simple echelle spectra. Compare to the original, this version contains tonnes of improvement, many procedures were written from scratch. For correct using, the pipeline requires Python v3.8+ and the following modules:
 - internal (sys, os, warnings, math, shutil, datetime, types, datetime, types, time, copy, logging).
-- external (astropy, numpy, matplotlib, PyAstronomy, scipy, scikit-image, sklearn, astroquery, argparse).
+- external (astropy, numpy (<2), matplotlib, scipy, scikit-image, sklearn, astroquery, argparse).
 
 The current version of the pipeline is designed for reduction of echelle spectra coming from the Medium Resolution Echelle Spectrograph (MRES) of the 2.4-m Thai National Telescope and eShel spectrographs installed on the NARIT telescopes in Chachoengsao, Korat and Doi Inthanon (Thailand). The package was independently tested on machines running Debian Linux Sid, macOS Big Sur and Windows 10.
 

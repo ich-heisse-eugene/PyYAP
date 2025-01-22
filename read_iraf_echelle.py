@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from sys import argv, exit
 from astropy.io import fits as pyfits
 import numpy as np

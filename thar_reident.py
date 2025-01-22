@@ -236,7 +236,7 @@ def first_ident(spectrum, zero, zero_features, OS):
     a=0
     new_features=[]
     #for every order
-    founded=0
+    found=0
     for ii in range(0, min(zero.shape[0], spectrum.shape[0])):#zero.shape[0]):
         s_order = spectrum[ii,:]                #copy one order
         z_order = zero[ii,:]
@@ -245,9 +245,9 @@ def first_ident(spectrum, zero, zero_features, OS):
             a=1
         shift = search_shift(s_order, z_order,a)  #get shift
         new_features = reidentify_features(s_order, OS, zero_features, ii, shift, new_features)
-        print(f"shift= {str(shift)}\t'{len(new_features) - founded:.0f} features identified in order {ii+OS:.0f}")
-        logging.info(f"shift= {str(shift)}\t'{len(new_features) - founded:.0f} features identified in order {ii+OS:.0f}")
-        founded = len(new_features)
+        print(f"shift= {str(shift)}\t'{len(new_features) - found:.0f} features identified in order {ii+OS:.0f}")
+        logging.info(f"shift= {str(shift)}\t'{len(new_features) - found:.0f} features identified in order {ii+OS:.0f}")
+        found = len(new_features)
     return(new_features)
 
 ####################################################################
@@ -310,8 +310,8 @@ def thar_auto(dir_name, file_name, OS, X_Order, Y_Order, view):
 
     #read full thar lines list
     if  os.path.exists(line_list):
-        print('File ', line_list, ' founded')
-        logging.info(f"File {line_list} founded")
+        print('File ', line_list, ' found')
+        logging.info(f"File {line_list} found")
         with open(line_list, 'r') as f:
             for line in f:
                 try:

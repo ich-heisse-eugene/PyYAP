@@ -1,7 +1,6 @@
 import astropy.io.fits as pyfits
 import os
 import numpy as np
-from PyAstronomy.pyasl import helcorr
 from astropy import time, coordinates as coord, units as u
 
 import logging
@@ -14,7 +13,7 @@ from scipy.interpolate import interp1d
 
 c = 299792.458 # km/s
 
-def cheb_sol(C, y_order): #2d chebyshev polynom calculation
+def cheb_sol(C, y_order): #2d chebyshev polynomial calculation
     shift = C[0]
     C = np.delete(C,0)
     coeff = np.reshape(C,(-1,y_order))#7-Yorder
@@ -52,12 +51,11 @@ def disp_add(fits_name, thar_name, view):
                     observat = coord.EarthLocation.from_geodetic(obslon, obslat, obsalt * u.m)
                     dateobs = np.char.replace(dateobs, 'T', ' ')
                     dateobs = time.Time(dateobs, scale='utc', location=observat)
-                    ltt_bary = dateobs.light_travel_time(star)
+                    ltt_bary = dateobs.light_travel_time(star, kind='barycentric', location=observat)
                     bjd = dateobs.jd + ltt_bary.value
-                    bcr, hjd = helcorr(observat.lon.degree, observat.lat.degree, obsalt, star.ra.degree, star.dec.degree, dateobs.jd)
-                    prihdr.set('HJD', hjd, 'Heliocentric JD')
+                    bcr = star.radial_velocity_correction(obstime=dateobs)
                     prihdr.set('BJD', bjd, 'Barycentric JD')
-                    prihdr.set('BARYCORR', bcr, 'Barycentric correction')
+                    prihdr.set('BARYCORR', bcr.to(u.km/u.s).value, 'Barycentric correction')
                 else:
                     print("No information about the observatory in the header. Wavelength remains uncorrected")
                     logging.warning("No information about the observatory in the header. Wavelength remains uncorrected")
