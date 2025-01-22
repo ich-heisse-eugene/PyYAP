@@ -130,9 +130,9 @@ def order_tracer(dir_name, file_name, X_half_width, step, min_height, aperture, 
     for i in range(orders.shape[0]):
         xcc = np.mean(x_coord)
         if adaptive:
-            text_file.write(f"{i:d}\t{xcc:.3f}\t{chebval(xcc, orders[i, :]):.3f}\t{" ".join(str(jj) for jj in orders[i, :])}\t{" ".join(str(jj) for jj in width_coef_tab[i, :])}\n")
+            text_file.write(f"{i:d}\t{xcc:.3f}\t{chebval(xcc, orders[i, :]):.3f}\t{' '.join(str(jj) for jj in orders[i, :])}\t{' '.join(str(jj) for jj in width_coef_tab[i, :])}\n")
         else:
-            text_file.write(f"{i:d}\t{xcc:.3f}\t{chebval(xcc, orders[i, :]):.3f}\t{" ".join(str(jj) for jj in orders[i, :])}\t{width_tab[i, 0]:.2f}\n")
+            text_file.write(f"{i:d}\t{xcc:.3f}\t{chebval(xcc, orders[i, :]):.3f}\t{' '.join(str(jj) for jj in orders[i, :])}\t{width_tab[i, 0]:.2f}\n")
     text_file.close()
     print(f"The results have been saved to {dir_name.joinpath('temp/traces.txt')}")
     logging.info(f"The results have been saved to {dir_name.joinpath('temp/traces.txt')}")
