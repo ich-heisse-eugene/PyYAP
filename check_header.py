@@ -13,8 +13,11 @@ def fill_headers(file_names, device):
         obslat = 18.573828  # Latitude of the observatory
         obslon = 98.4817485 # Longitude of the observatory, E
         obsalt = 2549.      # Altitude of the observatory
-        gain = 0.55         # Electronic gain in e-/ADU
+        gain = 0.55         # Electronic gain in e-/ADU. Andor Newton
         rdnoise = 2.0       # CCD readout noise
+        if device == 'umres': # Andor iKon-M
+            gain = 1.13     # Electronic gain in e-/ADU
+            rdnoise = 3.2   # CCD readout noise
     elif device == 'eshel_ccs':
         obsname = 'CCS'     # NARIT provincial observatory, Chachoengsao
         obslat = 13.593682  # Latitude of the observatory
