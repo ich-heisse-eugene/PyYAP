@@ -549,7 +549,7 @@ def thar_manual(file_name):
 
     #read features file
     if  os.path.exists(features_name):
-        print('File ', features_name, ' founded')
+        print('File ', features_name, ' found')
         with open(features_name, 'r') as f:
             for line in f:
                 one_str = line.rsplit('\t')
@@ -567,7 +567,7 @@ def thar_manual(file_name):
 
     #read thar file
     if  os.path.exists(base_name):
-        print('File ', base_name, ' founded')
+        print('File ', base_name, ' found')
         with open(base_name, 'r') as f:
             for line in f:
                 try:
