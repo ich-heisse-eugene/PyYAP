@@ -375,7 +375,7 @@ class Image(Header):
             try:
                 new_data = self._data*other
                 img = Image(data = new_data, error=self._error, mask=self._mask, header = self._header, origin=self._origin)
-                print ((type(self)), type(other))
+                # print ((type(self)), type(other))
                 return img
             except:
                 #raise exception if the type are not matching in general
