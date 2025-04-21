@@ -9,55 +9,52 @@ from astropy import coordinates as coord, units as u
 
 def fill_headers(file_names, device):
     if device == 'mres' or device == 'umres':
-        obsname = 'TNO'     # Thai National Observatory, Doi Inthanon
-        obslat = 18.573828  # Latitude of the observatory
-        obslon = 98.4817485 # Longitude of the observatory, E
-        obsalt = 2549.      # Altitude of the observatory
-        gain = 0.55         # Electronic gain in e-/ADU. Andor Newton
-        rdnoise = 2.0       # CCD readout noise
-        if device == 'umres': # Andor iKon-M
-            gain = 1.13     # Electronic gain in e-/ADU
-            rdnoise = 3.2   # CCD readout noise
-    elif device == 'eshel_ccs':
-        obsname = 'CCS'     # NARIT provincial observatory, Chachoengsao
-        obslat = 13.593682  # Latitude of the observatory
-        obslon = 101.256209 # Longitude of the observatory, E
-        obsalt = 11.        # Altitude of the observatory
-        gain = 0.95         # Electronic gain in e-/ADU
-        rdnoise = 7.0       # CCD readout noise
-    elif device == 'eshel_krt':
-        obsname = 'KRT'     # NARIT provincial observatory, Korat
-        obslat = 14.873460  # Latitude of the observatory
-        obslon = 102.02883  # Longitude of the observatory, E
-        obsalt = 245.       # Altitude of the observatory
-        gain = 0.95         # Electronic gain in e-/ADU
-        rdnoise = 7.0       # CCD readout noise
+        obsname = 'TNO'         # Thai National Observatory, Doi Inthanon
+        obslat = 18.573828      # Latitude of the observatory
+        obslon = 98.4817485     # Longitude of the observatory, E
+        obsalt = 2549.          # Altitude of the observatory
+        gain = 0.55             # Electronic gain in e-/ADU. Andor Newton
+        rdnoise = 2.0           # CCD readout noise
+        if device == 'umres':   # Andor iKon-M
+            gain = 1.13         # Electronic gain in e-/ADU
+            rdnoise = 3.2       # CCD readout noise
+    elif device == 'eshel_ccs': # Legacy device. Not available anymore
+        obsname = 'CCS'         # NARIT provincial observatory, Chachoengsao
+        obslat = 13.593682      # Latitude of the observatory
+        obslon = 101.256209     # Longitude of the observatory, E
+        obsalt = 11.            # Altitude of the observatory
+        gain = 0.95             # Electronic gain in e-/ADU
+        rdnoise = 7.0           # CCD readout noise
+    elif device == 'eshel_krt': # Legacy device. Not available anymore
+        obsname = 'KRT'         # NARIT provincial observatory, Korat
+        obslat = 14.873460      # Latitude of the observatory
+        obslon = 102.02883      # Longitude of the observatory, E
+        obsalt = 245.           # Altitude of the observatory
+        gain = 0.95             # Electronic gain in e-/ADU
+        rdnoise = 7.0           # CCD readout noise
     elif device == 'eshel_tno':
-        obsname = 'TNO'     # Thai National Observatory, Doi Inthanon
-        obslat = 18.573828  # Latitude of the observatory
-        obslon = 98.4817485 # Longitude of the observatory, E
-        obsalt = 2549.        # Altitude of the observatory
-        gain = 0.95         # Electronic gain in e-/ADU
-        rdnoise = 7.0       # CCD readout noise
+        obsname = 'TNO'         # Thai National Observatory, Doi Inthanon
+        obslat = 18.573828      # Latitude of the observatory
+        obslon = 98.4817485     # Longitude of the observatory, E
+        obsalt = 2549.          # Altitude of the observatory
+        gain = 0.95             # Electronic gain in e-/ADU
+        rdnoise = 7.0           # CCD readout noise
     elif device == 'maestro':
-        obsname = 'Terskol' # Terskol Observatory, Mt. Elbrus, Russia
-        obslat = 43.272777  # Latitude of the observatory
-        obslon = 42.500000  # Longitude of the observatory, E
-        obsalt = 3100.      # Altitude of the observatory
-        gain = 1.0          # Electronic gain in e-/ADU
-        rdnoise = 4.0       # CCD readout noise
-    elif device == 'hesp':
-        obsname = 'HCT'     # Himalayan Chandra Telescope, Ladakh, India
-        obslat = 32.779444  # Latitude of the observatory
-        obslon = 78.964166  # Longitude of the observatory, E
-        obsalt = 4500.      # Altitude of the observatory
-        gain = 2.54         # Electronic gain in e-/ADU
-        rdnoise = 4.2       # CCD readout noise
+        obsname = 'Terskol'     # Terskol Observatory, Mt. Elbrus, Russia
+        obslat = 43.272777      # Latitude of the observatory
+        obslon = 42.500000      # Longitude of the observatory, E
+        obsalt = 3100.          # Altitude of the observatory
+        gain = 1.0              # Electronic gain in e-/ADU
+        rdnoise = 4.0           # CCD readout noise
+    elif device == 'eshel_zdnc':
+        obsname = 'Zdanice'     # ASA 0.8m telescope, Ždánice
+        obslat = 49.06574       # Latitude of the observatory
+        obslon = 17.03784       # Longitude of the observatory, E
+        obsalt = 250            # Altitude of the observatory
+        gain = 1                # Electronic gain in e-/ADU
+        rdnoise = 1             # CCD readout noise
 
     files, objnames = np.loadtxt(file_names, unpack=True, usecols=(0,1), dtype=str, delimiter=';')
-    simbad_session = Simbad()
-    simbad_session.add_votable_fields('ra(H;ICRS;J2000)', 'dec(D;ICRS;J2000)')
-    simbad_session.remove_votable_fields('coordinates')
     for ii in range(len(files)):
         files[ii] = files[ii].strip()
         objnames[ii] = objnames[ii].strip()
@@ -78,20 +75,26 @@ def fill_headers(file_names, device):
                     tm_start = Time.Time(hdr['DATE-OBS']+'T'+hdr['UT'])
             elif 'FRAME' in hdr:
                 tm_start = Time.Time(hdr['FRAME'])
-            if 'EXPOSURE' in hdr:
+            if 'EXPOSURE' in hdr and 'EXPTIME' not in hdr:
                 texp = hdr['EXPOSURE'] * u.s
                 hdr.set('EXPTIME', hdr['EXPOSURE'], 'Exposure (s)')
-            else:
+            elif 'EXPOSURE' in hdr and 'EXPTIME' in hdr:
                 texp = hdr['EXPTIME'] * u.s
+            elif 'EXPTIME' in hdr:
+                texp = hdr['EXPTIME'] * u.s
+            else:
+                texp = 0 * u.s
             tm_mid = tm_start + texp/2.
             tm_end = tm_start + texp
             ut = tm_mid.ymdhms[3] + tm_mid.ymdhms[4]/60. + tm_mid.ymdhms[5]/3600.
             ut_end = tm_end.ymdhms[3] + tm_end.ymdhms[4]/60. + tm_end.ymdhms[5]/3600.
-            if 'DATE' not in hdr:
+            if 'DATE' not in hdr and 'DATE-OBS' in hdr:
                 hdr.set('DATE', hdr['DATE-OBS'].split(".")[0], 'Copy of DATE-OBS')
             hdr.set('DISPAXIS', 1, 'Keyword for IRAF')
-            hdr.set('GAIN', gain, '')
-            hdr.set('RDNOISE', rdnoise, '')
+            if 'GAIN' not in hdr:
+                hdr.set('GAIN', gain, '')
+            if 'RDNOISE' not in hdr:
+                hdr.set('RDNOISE', rdnoise, '')
             hdr.set('OBSGEO-B', obslat, 'Latitude of the observatory')
             hdr.set('OBSGEO-L', obslon, 'Longitude of the observatory')
             hdr.set('OBSGEO-H', obsalt, 'Altitude of the observatory')
@@ -111,34 +114,41 @@ def fill_headers(file_names, device):
             if (objnames[ii].lower() != "flat") and (objnames[ii].lower() != "thar") \
                and (objnames[ii].lower() != "bias") and (objnames[ii].lower() != "sky") and \
                (objnames[ii].lower() != "dark"):
-               query_result = simbad_session.query_object(objnames[ii])
-               ra = query_result['RA_H_ICRS_J2000'][0]
-               dec = query_result['DEC_D_ICRS_J2000'][0]
-               if 'RA' in hdr:
-                   hdr['RA'] = ra
-               else:
-                   hdr.set('RA', ra, 'RA in hours')
-               if 'DEC' in hdr:
-                   hdr['DEC'] = dec
-               else:
-                   hdr.set('DEC', dec, 'DEC in degrees')
-               if 'EPOCH' in hdr:
-                   hdr['EPOCH'] = 2000.
-               else:
+               if 'RA' in hdr and 'DEC' in hdr:
+                   if hdr['RA'].strip() != '' and hdr['DEC'].strip() != '':
+                      ra = hdr['RA']; dec = hdr['DEC']
+                else:
+                    print(f"Requesting information for {objnames[ii]} from SIMBAD")
+                    simbad_session = Simbad()
+                    try:
+                        query_result = simbad_session.query_object(objnames[ii])
+                    except Exception as e:
+                        print(f"Error: {e}. Leave the wavelength scale uncorrected")
+                        ra = ''; dec = ''
+                    else:
+                        coo = coord.SkyCoord(ra=query_result['ra'], dec=query_result['dec'])
+                        ra = coo.ra.to(u.hourangle).to_string(sep=":", precision=2)[0]
+                        dec = coo.dec.to(u.degree).to_string(sep=":", precision=2)[0]
+                        hdr.set('RA', ra, 'RA in hours')
+                        hdr.set('DEC', dec, 'DEC in degrees')
+               if 'EPOCH' not in hdr:
                    hdr.set('EPOCH', 2000., 'EPOCH of coordinates')
-               star = coord.SkyCoord(ra, dec, unit=(u.hourangle, u.deg), frame='icrs')
                observat = coord.EarthLocation.from_geodetic(obslon, obslat, obsalt * u. m)
                dateobs = np.char.replace(tm_mid.fits, 'T', ' ')
                dateobs = Time.Time(dateobs, scale='utc', location=observat)
-               ltt_bary = dateobs.light_travel_time(star)
-               bjd = dateobs.jd + ltt_bary.value
-               bcr = star.radial_velocity_correction(obstime=dateobs)
-               hdr.set('BJD', bjd, 'Barycentric JD')
-               hdr.set('BARYCORR', bcr.to(u.km/u.s).value, 'Barycentric correction')
+               if ra != '' and dec != '':
+                    star = coord.SkyCoord(ra, dec, unit=(u.hourangle, u.deg), frame='icrs')
+                    ltt_bary = dateobs.light_travel_time(star)
+                    bjd = dateobs.jd + ltt_bary.value
+                    bcr = star.radial_velocity_correction(obstime=dateobs)
+                    hdr.set('BJD', bjd, 'Barycentric JD')
+                    hdr.set('BARYCORR', bcr.to(u.km/u.s).value, 'Barycentric correction')
+                else:
+                    hdr.set('JD', dateobs.jd, 'Julian Date')
                hdr.set('IMAGETYP', 'OBJ', '')
-            if 'OBJNAME' in hdr:
+            if 'OBJNAME' not in hdr:
                 hdr['OBJNAME'] = objnames[ii]
-            else:
+            if hdr['OBJNAME'].strip() == '':
                 hdr.set('OBJNAME', objnames[ii], '')
             if 'DATE-OBS' in hdr:
                 hdr['DATE-OBS'] = tm_mid.fits
