@@ -146,8 +146,10 @@ def fill_headers(file_names, device):
                 else:
                     hdr.set('JD', dateobs.jd, 'Julian Date')
                hdr.set('IMAGETYP', 'OBJ', '')
-            if 'OBJNAME' not in hdr:
+            if 'OBJNAME' not in hdr and 'OBJECT' not in hdr:
                 hdr['OBJNAME'] = objnames[ii]
+            elif 'OBJNAME' not in hdr:
+                hdr['OBJNAME'] = hdr['OBJECT']
             if hdr['OBJNAME'].strip() == '':
                 hdr.set('OBJNAME', objnames[ii], '')
             if 'DATE-OBS' in hdr:
