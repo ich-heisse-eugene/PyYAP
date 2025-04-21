@@ -1,18 +1,19 @@
-import astropy.io.fits as pyfits
+from pathlib import Path
+
+from astropy.io import fits
 import numpy as np
 
 import logging
 
-from numpy.polynomial.chebyshev import chebfit, chebval
-
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 
-import matplotlib
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
 from sklearn.cluster import AgglomerativeClustering
+mpl.rcParams['text.usetex'] = False
 
 import warnings
 warnings.simplefilter("ignore")
@@ -22,16 +23,17 @@ def order_tracer(dir_name, file_name, X_half_width, step, min_height, aperture, 
     poly_order = 2 # order of polynomial fit
 
     #read image
-    hdulist = pyfits.open(dir_name.joinpath(file_name))
+    hdulist = fits.open(dir_name.joinpath(file_name))
     ordim = hdulist[0].data.copy()
     hdulist.close()
 
     trace_im = np.zeros((ordim.shape[0], ordim.shape[1]), dtype=float)
 
     # Search for local maxima in cross-sections and construct the mask of orders. 1 - max, 0 - rest of pixels
-    for x_t in range(X_half_width, ordim.shape[1]-X_half_width, X_half_width):
-        slic = np.median(ordim[:,x_t-X_half_width:x_t+X_half_width-1], 1)
-        peaks_coord,_ = find_peaks(slic, height=min_height, width=2)
+    for x_t in range(3, ordim.shape[1]-3, 3):
+        med_cs = np.mean(ordim[:,x_t-3:x_t+4], 1)
+        slic = med_cs / np.max(med_cs) * 100.
+        peaks_coord,_ = find_peaks(slic, height=min_height, distance=1.22*X_half_width)
         trace_im[peaks_coord, x_t] = 1
 
     # Now re-arrange the data for futher clustering
@@ -41,7 +43,7 @@ def order_tracer(dir_name, file_name, X_half_width, step, min_height, aperture, 
                                     metric='euclidean',
                                     linkage='single',
                                     compute_full_tree=True,
-                                    distance_threshold=5)
+                                    distance_threshold=15)
     model.fit(ord_mask)
     labels = model.labels_
     n_clusters = len(list(set(labels)))
@@ -52,9 +54,9 @@ def order_tracer(dir_name, file_name, X_half_width, step, min_height, aperture, 
     center_x = ordim.shape[1]/2 - 1
     for i in range(n_clusters):
         if len(ord_mask[labels==i,1]) >= (ordim.shape[1]/X_half_width-2)*0.5:
-            cheb_coef = chebfit(ord_mask[labels==i,1], ord_mask[labels==i,0], poly_order)
-            cheb_coef = np.insert(cheb_coef, 0, chebval(center_x, cheb_coef))
-            order_tab.append(cheb_coef)
+            poly_coef = np.polyfit(ord_mask[labels==i,1], ord_mask[labels==i,0], poly_order)
+            poly_coef = np.insert(poly_coef, 0, np.polyval(poly_coef, center_x))
+            order_tab.append(poly_coef)
     order_tab = np.asarray(order_tab) # convert list into array
     order_tab = order_tab[order_tab[:,0].argsort()]  # Sort array by ascending
     order_tab[:, 0] = np.arange(len(order_tab[:, 0]), dtype=int) # insert the number of order in the 0th column
@@ -64,11 +66,10 @@ def order_tracer(dir_name, file_name, X_half_width, step, min_height, aperture, 
 
     # Recentering orders and the final tracing
     #get points for order tracing, start from center column of image
-    n_points = np.floor((ordim.shape[1]/2-X_half_width)/step)
-    print(f"Each order has {1+2*n_points:.0f} points for fitting")
-    logging.info(f"Each order has {1+2*n_points:.0f} points for fitting")
-    trace_x = np.arange(ordim.shape[1]//2-X_half_width - n_points*step, ordim.shape[1]-step, step, dtype=int)
-
+    # n_points = np.floor((ordim.shape[1]/2-X_half_width)/step)
+    print(f"Each order has {step} points for fitting")
+    logging.info(f"Each order has {step} points for fitting")
+    trace_x = np.linspace(step, ordim.shape[1]-step-1, step, dtype=int)
     x_coord = np.arange(ordim.shape[1])
     orders = []
 
@@ -79,13 +80,14 @@ def order_tracer(dir_name, file_name, X_half_width, step, min_height, aperture, 
         centr = []
         width = []
         for x in trace_x:
-            xt = np.arange(x-step, x+step, 1, dtype=int)
-            yc = chebval(x, order_tab[i, 1:])
-            if yc > 0 and yc+X_half_width+2 < ordim.shape[0]:
-                yy = np.arange(yc-X_half_width, yc+X_half_width+2, 1, dtype=int)
-                prof = np.median(ordim[yy[0]:yy[-1]+1, xt], axis=1)
-                if prof.shape[0] != 0 and max(prof) > 20.: # Fit only well-exposured part of the order
-            # Re-fit the cross-sections
+            xt = np.arange(x-1, x+2, 1, dtype=int)
+            yc = np.polyval(order_tab[i, 1:], x)
+            margin = 2.5*X_half_width
+            if yc >= margin and yc < ordim.shape[0]-margin:
+                yy = np.arange(yc-margin, yc+margin+1, 1, dtype=int)
+                prof = np.mean(ordim[yy[0]:yy[-1]+1, xt], axis=1)
+                if prof.shape[0] != 0 and max(prof) > min_height: # Fit only well-exposured part of the order
+                    # Re-fit the cross-sections
                     moffat = lambda x, A, B, C, D, x0: A*(1 + ((x-x0)/B)**2)**(-C)+D
                     Y = yy-yc
                     p0 = np.array([max(prof), 3.0, 3.0, 0.0, 3.0])
@@ -95,22 +97,23 @@ def order_tracer(dir_name, file_name, X_half_width, step, min_height, aperture, 
                         pass
                     else:
                         fwhm = 2*popt[1]*np.sqrt(2**(1/(popt[2]))-1)
-                        if np.isfinite(fwhm) and fwhm > 1 and fwhm < 10:
+                        if np.isfinite(fwhm) and fwhm > 1 and fwhm < 50:
                             xfit.append(x)
                             centr.append(popt[4]+yc)
                             width.append(fwhm)
+                            # print(f"order = {i+1}, x = {x}, yc = {yc:.3f}, dx = {popt[4]:.3f}, fwhm = {fwhm:.3f}")
                         med_fwhm = np.median(width)
 
         print(f"{len(xfit)} points were fitted, median FWHM is {med_fwhm:.2f} pix")
         logging.info(f"{len(xfit)} points were fitted, median FWHM is {med_fwhm:.2f} pix")
-        coef_center = chebfit(xfit, centr, poly_order)
-        coef_width = chebfit(xfit, width, poly_order)
+        coef_center = np.polyfit(xfit, centr, poly_order)
+        coef_width = np.polyfit(xfit, width, poly_order)
         ## Check the limits of the orders
         if adaptive:
-            width = chebval(x_coord, coef_width)
+            width = np.polyval(coef_width, x_coord)
         else:
             width = np.repeat(med_fwhm, ordim.shape[1])
-        if np.min(chebval(x_coord, coef_center) - width) < 1. or np.max(chebval(x_coord, coef_center) + width) >= ordim.shape[0]-1:
+        if np.min(np.polyval(coef_center, x_coord) - width) < 0. or np.max(np.polyval(coef_center, x_coord) + width) >= ordim.shape[0]-1:
             print(f"Skip incomplete order #{i}")
             logging.info(f"Skip incomplete order #{i}")
         else:
@@ -130,9 +133,9 @@ def order_tracer(dir_name, file_name, X_half_width, step, min_height, aperture, 
     for i in range(orders.shape[0]):
         xcc = np.mean(x_coord)
         if adaptive:
-            text_file.write(f"{i:d}\t{xcc:.3f}\t{chebval(xcc, orders[i, :]):.3f}\t{' '.join(str(jj) for jj in orders[i, :])}\t{' '.join(str(jj) for jj in width_coef_tab[i, :])}\n")
+            text_file.write(f"{i:d}\t{xcc:.3f}\t{np.polyval(orders[i, :], xcc):.3f}\t{' '.join(str(jj) for jj in orders[i, :])}\t{' '.join(str(jj) for jj in width_coef_tab[i])}\n")
         else:
-            text_file.write(f"{i:d}\t{xcc:.3f}\t{chebval(xcc, orders[i, :]):.3f}\t{' '.join(str(jj) for jj in orders[i, :])}\t{width_tab[i, 0]:.2f}\n")
+            text_file.write(f"{i:d}\t{xcc:.3f}\t{np.polyval(orders[i, :], xcc):.3f}\t{' '.join(str(jj) for jj in orders[i, :])}\t{width_tab[i, 0]:.2f}\n")
     text_file.close()
     print(f"The results have been saved to {dir_name.joinpath('temp/traces.txt')}")
     logging.info(f"The results have been saved to {dir_name.joinpath('temp/traces.txt')}")
@@ -140,14 +143,15 @@ def order_tracer(dir_name, file_name, X_half_width, step, min_height, aperture, 
     # Display the results
     fig = plt.figure(figsize=(15, 15/(ordim.shape[1]/ordim.shape[0])), tight_layout=True)
     ax0 = fig.add_subplot(1,1,1)
-    norm = matplotlib.colors.LogNorm(1, ordim.max(), clip=True)
+    norm = mpl.colors.LogNorm(1, ordim.max(), clip=True)
     ax0.imshow(ordim, norm=norm, cmap='gist_gray')
     ax0.set_xlabel("CCD X")
     ax0.set_ylabel("CCD Y")
     for i in range(orders.shape[0]):
-        ax0.plot(x_coord, chebval(x_coord, orders[i, :]) + aperture * width_tab[i, :], 'b-', lw=0.4)
-        ax0.plot(x_coord, chebval(x_coord, orders[i, :]) - aperture * width_tab[i, :], 'r-', lw=0.4)
-        ax0.text(x_coord[15], chebval(x_coord[15], orders[i, :])-3, '\#'+str(i+1), color='y', fontsize=6)
+        ax0.plot(x_coord, np.polyval(orders[i, :], x_coord) + aperture * width_tab[i, :], 'b-', lw=0.4)
+        ax0.plot(x_coord, np.polyval(orders[i, :], x_coord), 'gx', ms=1)
+        ax0.plot(x_coord, np.polyval(orders[i, :], x_coord) - aperture * width_tab[i, :], 'r-', lw=0.4)
+        ax0.text(x_coord[15], np.polyval(orders[i, :], x_coord[15])-3, '#'+str(i+1), color='y', fontsize=6)
     plt.gca().invert_yaxis()
     fig.savefig(dir_name.joinpath('orders_map.pdf'), dpi=350)
     if view:
