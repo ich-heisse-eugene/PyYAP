@@ -1,4 +1,4 @@
-import astropy.io.fits as pyfits
+from astropy.io import fits
 import os
 import numpy as np
 import scipy.ndimage
@@ -6,7 +6,6 @@ from scipy.optimize import curve_fit
 from scipy import optimize
 import matplotlib
 import matplotlib.pyplot
-import os.path
 import logging
 
 def write_disp(name, data, OS, X_Order, Y_Order, prihdr):
@@ -33,13 +32,13 @@ def write_features(name, features, prihdr):
 
 ####################################################################
 def write_new_short(spectrum, features, prihdr, dir_name):
-    text_file = open(dir_name.joinpath('thar_new.dat'), "w")
+    text_file = open(os.path.join(dir_name, 'thar_new.dat'), "w")
     for ii in range(0, len(features)):
         print(str(int(features[ii][0]))+'\t'+str(round(features[ii][1],2))+'\t'+str(round(features[ii][2],4))+'\t'+str(round(features[ii][3],1)), file=text_file)
     text_file.close()
-    hdu = pyfits.PrimaryHDU(spectrum)
+    hdu = fits.PrimaryHDU(spectrum)
     hdu.header = prihdr
-    hdu.writeto(dir_name.joinpath('s_thar_new.fits'), overwrite=True)
+    hdu.writeto(os.path.join(dir_name, 's_thar_new.fits'), overwrite=True)
 
 ####################################################################
 ### checker
@@ -261,23 +260,17 @@ def thar_auto(dir_name, file_name, OS, X_Order, Y_Order, view):
     line_list = 'thar.dat'               #name of full features list for thar lamp
     global FWHM
     FWHM = 6                                        #approximate FWHM of profile
-    # global OS
-    # OS = 51                                         #absolute number of first (red) order
     global threshold
     threshold = 0.05                               #threshold for automatic search of features, 0.1 for FOX
     global tolerance
     tolerance = 0.05                               #tolerance in A for auto identification of features
-    # global X_Order
-    # X_Order = 6                                     #X (echelle dispersion) order of global 2D polynome
-    # global Y_Order
-    # Y_Order = 6                                     #Y (cross dispersion) order of global 2D polynome
     global max_shift
     max_shift = 20                                  #max shift in pix for automatic identification
     thar = []           #full list with thar faetures
     zero_features = []  #list with features for first identification
 
     #open file with last thar
-    hdulist = pyfits.open(old_thar)
+    hdulist = fits.open(old_thar)
     zero = hdulist[0].data.copy()
     hdulist.close()
     zero = np.nan_to_num(zero)
@@ -285,7 +278,7 @@ def thar_auto(dir_name, file_name, OS, X_Order, Y_Order, view):
     #open file with new thar
     print(file_name)
     logging.info(file_name)
-    hdulist = pyfits.open(file_name) ## dir_name+file_name (for Windows???)
+    hdulist = fits.open(file_name) ## dir_name+file_name (for Windows???)
     spectrum = hdulist[0].data.copy()
     prihdr = hdulist[0].header
     hdulist.close()

@@ -1,5 +1,5 @@
 import time
-import astropy.io.fits as pyfits
+from astropy.io import fits
 import numpy as np
 from medianer import medianer
 import os
@@ -12,7 +12,7 @@ def thar_combiner(dir_name, thar_list):
     with open(thar_list, 'r') as f:
         for line in f:
             name = line.strip()
-            prihdr = pyfits.getheader(name)
+            prihdr = fits.getheader(name)
             thar_name.append(name.split(os.sep)[-1])
             print(prihdr['DATE-OBS'])
             thar_time.append(time.mktime(time.strptime(prihdr['DATE-OBS'][:prihdr['DATE-OBS'].find('.')], "%Y-%m-%dT%H:%M:%S")))#.%f
@@ -33,22 +33,22 @@ def thar_combiner(dir_name, thar_list):
         if len(thar_ansamble)>0:
             thar_all.append(thar_ansamble)
 
-    tf=open(dir_name.joinpath('temp', 's_thar_list.txt'), 'w')
+    tf=open(os.path.join(dir_name, 'temp', 's_thar_list.txt'), 'w')
     for ii in range(0, len(thar_all)):
-        temp_list = open(dir_name.joinpath('temp.txt'), 'w')
+        temp_list = open(os.path.join(dir_name, 'temp.txt'), 'w')
         local = thar_all[ii]
         for jj in range(0, len(local)):
-            print(dir_name.joinpath(local[jj]), file=temp_list)
+            print(os.path.join(dir_name, local[jj]), file=temp_list)
             print (local[jj])
         temp_list.close()
-        medianer(dir_name, dir_name.joinpath('temp.txt'), 's_thar_'+str(ii)+'.fits')
-        print(dir_name.joinpath('s_thar_'+str(ii)+'.fits'), file=tf)
+        medianer(dir_name, os.path.join(dir_name, 'temp.txt'), 's_thar_'+str(ii)+'.fits')
+        print(os.path.join(dir_name, 's_thar_'+str(ii)+'.fits'), file=tf)
         print(f"s_thar_{str(ii)}.fits created")
         logging.info(f"s_thar_{str(ii)}.fits created")
         print()
     tf.close()
 
     os.remove(thar_list)
-    os.remove(dir_name.joinpath('temp.txt'))
+    os.remove(os.path.join(dir_name, 'temp.txt'))
 
-    return(dir_name.joinpath('temp', 's_thar_list.txt'))
+    return(os.path.join(dir_name, 'temp', 's_thar_list.txt'))

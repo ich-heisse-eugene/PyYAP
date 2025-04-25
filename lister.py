@@ -1,4 +1,4 @@
-import astropy.io.fits as pyfits
+from astropy.io import fits
 import os
 import shutil
 import logging
@@ -12,20 +12,20 @@ def lister(data_dir, raw_dir, temp_dir):
     #create list of fits-files
     for ii in range (0,len(dir_content)):
         if dir_content[ii].count('.fit')==1 or dir_content[ii].count('.fts')==1 or dir_content[ii].count('.fits')==1:
-            file_list.append(data_dir.joinpath(dir_content[ii]))
+            file_list.append(os.path.join(data_dir, dir_content[ii]))
 
     counter = len(file_list)
     if len(file_list) > 0:
-        bf = open(temp_dir.joinpath('bias_list.txt'), 'w')
-        df = open(temp_dir.joinpath('dark_list.txt'), 'w')
-        ff = open(temp_dir.joinpath('flat_list.txt'), 'w')
-        tf = open(temp_dir.joinpath('thar_list.txt'), 'w')
-        of = open(temp_dir.joinpath('obj_list.txt'), 'w')
+        bf = open(os.path.join(temp_dir, 'bias_list.txt'), 'w')
+        df = open(os.path.join(temp_dir, 'dark_list.txt'), 'w')
+        ff = open(os.path.join(temp_dir, 'flat_list.txt'), 'w')
+        tf = open(os.path.join(temp_dir, 'thar_list.txt'), 'w')
+        of = open(os.path.join(temp_dir, 'obj_list.txt'), 'w')
         #create lists
         for ii in range (0,len(file_list)):
             try:
                 shutil.copy2(file_list[ii], raw_dir)
-                hdulist = pyfits.open(file_list[ii], mode='update')
+                hdulist = fits.open(file_list[ii], mode='update')
                 prihdr = hdulist[0].header
                 if 'IMAGETYP' not in prihdr:
                     if os.fspath(file_list[ii]).lower().find('bias') != -1:
@@ -85,7 +85,7 @@ def lister(data_dir, raw_dir, temp_dir):
         tf.close()
         of.close()
         if not darks:
-            os.remove(temp_dir.joinpath('dark_list.txt'))
+            os.remove(os.path.join(temp_dir, 'dark_list.txt'))
         if counter==0:
             logging.info('OK')
             return ('OK')

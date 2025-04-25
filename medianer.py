@@ -1,4 +1,4 @@
-import astropy.io.fits as pyfits
+from astropy.io import fits
 import astropy.time as Time
 import os
 import numpy
@@ -17,8 +17,8 @@ def medianer(dir_name, list_name, out_name):
     with open(list_name, 'r') as f:
         for line in f:
             name = line.strip()
-            _data.append(pyfits.getdata(name))
-            prihdr = pyfits.getheader(name)
+            _data.append(fits.getdata(name))
+            prihdr = fits.getheader(name)
             file_list.append(name.split(os.sep)[-1])
             try:
                 _time.append(time.mktime(time.strptime(prihdr['DATE-OBS'], "%Y-%m-%dT%H:%M:%S.%f")))
@@ -70,9 +70,9 @@ def medianer(dir_name, list_name, out_name):
 
     prihdr['HISTORY'] = 'median combined: '+ str(_data.shape[0])
 
-    hdu = pyfits.PrimaryHDU(out, prihdr)
-    hdulist = pyfits.HDUList([hdu])
-    hdulist.writeto(dir_name.joinpath(out_name), overwrite = True)
+    hdu = fits.PrimaryHDU(out, prihdr)
+    hdulist = fits.HDUList([hdu])
+    hdulist.writeto(os.path.join(dir_name, out_name), overwrite = True)
 
     if out_name == 's_bias.fits' or out_name == 's_flat.fits':
         with open(list_name, 'r') as f:

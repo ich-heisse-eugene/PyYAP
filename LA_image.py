@@ -18,7 +18,7 @@
 
 
 import numpy
-import astropy.io.fits as pyfits
+from astropy.io import fits
 from scipy import ndimage
 
 __version__ = "0.2"
@@ -30,9 +30,9 @@ class Header(object):
 
             Parameters
             --------------
-            header : pyfits.header object, optional
+            header : fits.header object, optional
                     Fits header as header
-            cardlist : pyfits.CardList object, optional
+            cardlist : fits.CardList object, optional
                     Fits header as a card list,
                     if header is given cardlist parameter will be ignored
             origin : string, optional
@@ -48,7 +48,7 @@ class Header(object):
         elif cardlist is not None and header is None:
             # Assign private variable and convert card list  to header
             self._cardlist = cardlist
-            self._header = pyfits.Header(cardlist)
+            self._header = fits.Header(cardlist)
         else:
             # Create empty Header and CardList objects
             self._cardlist = None
@@ -540,7 +540,7 @@ class Image(Header):
             extension_error : int, optional with default: None
                 Number of the FITS extension containing the errors for the values
         """
-        hdu = pyfits.open(filename, ignore_missing_end=True) #open FITS file
+        hdu = fits.open(filename, ignore_missing_end=True) #open FITS file
         if extension_data== None and extension_mask==None and extension_error==None:
                 self._data = hdu[0].data
                 self._dim = self._data.shape # set dimension
@@ -591,28 +591,28 @@ class Image(Header):
         # create primary hdus and image hdus
         # data hdu
         if extension_data==None and extension_error==None and extension_mask==None:
-            hdus[0] = pyfits.PrimaryHDU(self._data)
+            hdus[0] = fits.PrimaryHDU(self._data)
             if self._error is not None:
-                hdus[1] = pyfits.ImageHDU(self._error, name='ERROR')
+                hdus[1] = fits.ImageHDU(self._error, name='ERROR')
             if self._mask is not None:
-                hdus[2] = pyfits.ImageHDU(self._mask.astype('uint8'), name='BADPIX')
+                hdus[2] = fits.ImageHDU(self._mask.astype('uint8'), name='BADPIX')
         else:
             if extension_data == 0:
-                hdus[0] = pyfits.PrimaryHDU(self._data)
+                hdus[0] = fits.PrimaryHDU(self._data)
             elif extension_data>0 and extension_data is not None:
-                hdus[extension_data] = pyfits.ImageHDU(self._data, name='DATA')
+                hdus[extension_data] = fits.ImageHDU(self._data, name='DATA')
 
             # mask hdu
             if extension_mask == 0:
-                hdu = pyfits.PrimaryHDU(self._mask.astype('uint8'))
+                hdu = fits.PrimaryHDU(self._mask.astype('uint8'))
             elif extension_mask>0 and extension_mask is not None:
-                hdus[extension_mask] = pyfits.ImageHDU(self._mask.astype('uint8'), name='BADPIX')
+                hdus[extension_mask] = fits.ImageHDU(self._mask.astype('uint8'), name='BADPIX')
 
             # error hdu
             if extension_error == 0:
-                hdu = pyfits.PrimaryHDU(self._error)
+                hdu = fits.PrimaryHDU(self._error)
             elif extension_error>0 and extension_error is not None:
-                hdus[extension_error] = pyfits.ImageHDU(self._error, name='ERROR')
+                hdus[extension_error] = fits.ImageHDU(self._error, name='ERROR')
 
         # remove not used hdus
         for i in range(len(hdus)):
@@ -623,7 +623,7 @@ class Image(Header):
 
 
         if len(hdus)>0:
-            hdu = pyfits.HDUList(hdus) # create an HDUList object
+            hdu = fits.HDUList(hdus) # create an HDUList object
             if self._header is not None:
                 hdu[0].header = self.getHeader() # add the primary header to the HDU
                 hdu[0].header['HISTORY'] = 'cosmic cleaned'
@@ -828,7 +828,6 @@ class Image(Header):
             image :  Image object
                 An Image object with the median filter data
         """
-
         new_data = ndimage.filters.median_filter(self._data,size ,mode=mode) # applying the median filter
         image = Image(data=new_data, header = self._header, error = self._error,  mask = self._mask) # create a new Image object
         return image

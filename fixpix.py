@@ -1,4 +1,4 @@
-import astropy.io.fits as pyfits
+from astropy.io import fits
 import numpy as np
 from scipy.interpolate import splev, splrep
 import os
@@ -39,7 +39,7 @@ def fixpix(dir_name, list_name, mask_file, area, flip):
     columns = True
     # Define the map of bad pixels
     try:
-        mhdu = pyfits.open(mask_file)
+        mhdu = fits.open(mask_file)
         mask = mhdu[0].data[0].copy()
         mhdu.close()
     finally:
@@ -76,11 +76,11 @@ def fixpix(dir_name, list_name, mask_file, area, flip):
             indices = np.where(mask[row,:] == 0)
             idy.append(np.array([np.min(indices), np.max(indices)], dtype=int))
 
-    with open(dir_name.joinpath(list_name), 'r') as f:
+    with open(os.path.join(dir_name, list_name), 'r') as f:
         for line in f:
             name = line.strip()
             try:
-                hdulist = pyfits.open(name, mode = 'update')
+                hdulist = fits.open(name, mode = 'update')
                 data = hdulist[0].data.copy()
                 prihdr = hdulist[0].header
                 hdulist.close()

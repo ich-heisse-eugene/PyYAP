@@ -1,6 +1,12 @@
+#!/usr/bin/env python3
+from sys import argv, exit
 import os
 from astropy.io import fits
 import numpy as np
+from numpy.polynomial.legendre import legfit, legval
+from numpy.polynomial.chebyshev import chebfit, chebval
+from glob import glob
+import spectres
 
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -12,7 +18,9 @@ warnings.filterwarnings("ignore")
 fontsize = 7
 mpl.rcParams['xtick.labelsize'] = fontsize
 mpl.rcParams['ytick.labelsize'] = fontsize
-mpl.rcParams['text.usetex'] = False
+mpl.rcParams['font.family'] = 'serif'
+mpl.rcParams['font.serif'] = 'cm'
+mpl.rcParams['text.usetex'] = True
 
 def read_multispec(input_file):
     """
@@ -81,93 +89,92 @@ def read_multispec(input_file):
             waves[:,:] = np.arange(npix)+1
     return waves,spectrum,header
 
-def nonlinearwave(nwave, specstr):
-    """
-    This function is a modified version of the corresponding unit from readmultispec.py
-    (https://raw.githubusercontent.com/kgullikson88/General/master/readmultispec.py)
-    Eugene Semenko, 2020-10-21
+def fit_poly(w, r, type, order):
+    if type == "legendre":
+        coef = legfit(w, r, order)
+        return coef
+    elif type == "chebyshev":
+        coef = chebfit(w, r, order)
+        return coef
 
-    Compute non-linear wavelengths from multispec string
-    Returns wavelength array and dispersion fields.
-    Raises a ValueError if it can't understand the dispersion string.
-    """
+def fit_cont(w, type, coef):
+    if type == "legendre":
+        return legval(w, coef)
+    elif type == "chebyshev":
+        return chebval(w, coef)
 
-    fields = specstr.split()
-    if int(fields[2]) != 2:
-        raise ValueError('Not nonlinear dispersion: dtype=' + fields[2])
-    if len(fields) < 12:
-        raise ValueError('Bad spectrum format (only %d fields)' % len(fields))
-    wt = float(fields[9])
-    w0 = float(fields[10])
-    ftype = int(fields[11])
-    if ftype == 3:
-        # cubic spline
-        if len(fields) < 15:
-            raise ValueError('Bad spline format (only %d fields)' % len(fields))
-        npieces = int(fields[12])
-        pmin = float(fields[13])
-        pmax = float(fields[14])
-        if len(fields) != 15 + npieces + 3:
-            raise ValueError('Bad order-%d spline format (%d fields)' % (npieces, len(fields)))
-        coeff = np.asarray(fields[15:], dtype=float)
-        # normalized x coordinates
-        s = (np.arange(nwave, dtype=float) + 1 - pmin) / (pmax - pmin) * npieces
-        j = s.astype(int).clip(0, npieces - 1)
-        a = (j + 1) - s
-        b = s - j
-        x0 = a ** 3
-        x1 = 1 + 3 * a * (1 + a * b)
-        x2 = 1 + 3 * b * (1 + a * b)
-        x3 = b ** 3
-        wave = coeff[j] * x0 + coeff[j + 1] * x1 + coeff[j + 2] * x2 + coeff[j + 3] * x3
-    elif ftype == 1 or ftype == 2:
-        # chebyshev or legendre polynomial
-        # legendre not tested yet
-        if len(fields) < 15:
-            raise ValueError('Bad polynomial format (only %d fields)' % len(fields))
-        order = int(fields[12])
-        pmin = float(fields[13])
-        pmax = float(fields[14])
-        if len(fields) != 15 + order:
-            # raise ValueError('Bad order-%d polynomial format (%d fields)' % (order, len(fields)))
-            order = len(fields) - 15
-        coeff = np.asarray(fields[15:], dtype=float)
-        # normalized x coordinates
-        pmiddle = (pmax + pmin) / 2
-        prange = pmax - pmin
-        x = (np.arange(nwave, dtype=float) + 1 - pmiddle) / (prange / 2)
-        p0 = np.ones(nwave, dtype=float)
-        p1 = x
-        wave = p0 * coeff[0] + p1 * coeff[1]
-        for i in range(2, order):
-            if ftype == 1:
-                # chebyshev
-                p2 = 2 * x * p1 - p0
-            else:
-                # legendre
-                p2 = ((2 * i - 1) * x * p1 - (i - 1) * p0) / i
-            wave = wave + p2 * coeff[i]
-            p0 = p1
-            p1 = p2
-    else:
-        raise ValueError('Cannot handle dispersion function of type %d' % ftype)
-    return wave
+def reject_points(w, r, cont, low_rej, high_rej, func, ord):
+    resid = r - cont
+    stdr = np.std(resid)
+    idx = np.where((resid >= -low_rej * stdr) & (resid <= high_rej * stdr))
+    coef = fit_poly(w[idx], r[idx], func, ord)
+    return w[idx], r[idx], cont, coef
+
+def normalise_flat(source_file, fit_func, fit_ord, fit_niter, fit_low_rej, fit_high_rej):
+    w_init, r_init, hdr_init = read_multispec(source_file)
+    cont_lev = np.zeros(np.shape(w_init), dtype=r_init[0].dtype)
+    nord = np.shape(w_init)[0]
+    for ord in range(nord):
+        w_tmp = w_init[ord, :]
+        r_tmp = r_init[ord, :]
+        for j in range(fit_niter+1):
+            coef = fit_poly(w_tmp, r_tmp, fit_func, fit_ord)
+            cont = fit_cont(w_tmp, fit_func, coef)
+            w_tmp, r_tmp, cont, coef = reject_points(w_tmp, r_tmp, cont, fit_low_rej, fit_high_rej, fit_func, fit_ord)
+            cont_cur = fit_cont(w_tmp, fit_func, coef)
+            idx_wrong = np.where(cont_cur == 0.)
+            cont_cur[idx_wrong] = r_tmp[idx_wrong]
+        cont_lev[ord, :] = fit_cont(w_init[ord, :], fit_func, coef)
+        # plt.plot(w_init[ord, :], r_init[ord, :]/cont_lev[ord, :], 'b-', lw=0.7)
+        # plt.plot(w_init[ord, :], cont_lev[ord, :], 'r-', lw=1.7)
+        # plt.show()
+    return cont_lev/r_init
 
 def remove_blz(file_spec, file_blaze, file_corr):
     _, r_s, hdr_s = read_multispec(file_spec)
-    _, r_b, hdr_b = read_multispec(file_blaze)
+    _, r_b, _ = read_multispec(file_blaze)
 
-    if 'EXPTIME' in hdr_s:
-        texp_s = float(hdr_s['EXPTIME'])
-    else:
-        texp_s = 1.
-    if 'EXPTIME' in hdr_b:
-        texp_b = float(hdr_b['EXPTIME'])
-    else:
-        texp_b = 1.
-    r_cor = (r_s / texp_s) / (r_b / texp_b)
-    hdr_s['HISTORY'] = 'Flat/blaze normalization of the spectrum'
+    r_cor = r_s / r_b
+    hdr_s['HISTORY'] = 'Blaze normalization of the spectrum'
     hdu = fits.PrimaryHDU(r_cor)
     hdu.header = hdr_s.copy()
     hdu.writeto(file_corr, overwrite=True)
     return file_corr
+
+if __name__ == "__main__":
+    # Read flat field spectrum
+    wff, rff, _ = read_multispec("s_flat_ec_WCS.fits")
+
+    ord_ref = 31 # Reference order @5502.5A
+
+    # Read stellar spectrum
+    w, r, hdr = read_multispec(argv[1].strip())
+    orders = w.shape[0]
+
+    # Divide spectrum by flat field
+    r = r / rff
+
+    # Renormalize the spectrum to the flux at 5502.5A
+    idx = np.where((w[ord_ref] >= 5500) & (w[ord_ref] <= 5505))[0]
+    norm = np.max(r[ord_ref, idx])
+    r = r/norm
+
+    wt, ft, _ = read_multispec("eblz14.fits")
+
+    # Read the file with the blaze function profiles
+    wblz, rblz, _ = read_multispec("/home/eugene/work/reduction/MRES/20241216/Reduced/blazev2_mres.fits")
+
+    for o in range(orders):
+        # plt.plot(wblz[o], rblz[o], lw=0.5)
+        plt.text(w[o, 20], 1.1, f"Order No{o+1}")
+        if o >= 14 and o <= 27:
+            rblz[o][:120] = rblz[o][:120] / 1.02
+        # if o == 13:
+        #     rblz[o] = ft
+        plt.plot(w[o], r[o]/rblz[o], lw=0.5)
+    plt.show()
+    # hdu = fits.PrimaryHDU(blaze)
+    # hdu.header = hdr.copy()
+    # hdu.writeto("blaze2fit.fits", overwrite=True)
+    exit(0)
+

@@ -1,4 +1,4 @@
-import astropy.io.fits as pyfits
+from astropy.io import fits
 import os
 import numpy as np
 from astropy import time, coordinates as coord, units as u
@@ -27,7 +27,7 @@ def disp_add(fits_name, thar_name, view):
         ax = matplotlib.pyplot.gca()
 
     #read fits
-    hdulist = pyfits.open(fits_name)
+    hdulist = fits.open(fits_name)
     spectrum = hdulist[0].data.copy()
     prihdr = hdulist[0].header
     hdulist.close()

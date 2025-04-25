@@ -1,4 +1,4 @@
-from astropy.io import fits as pyfits
+from astropy.io import fits
 import numpy as np
 import logging
 from get_sp_resolv import read_multispec
@@ -10,7 +10,7 @@ def update_snr(input_file):
     npix = np.shape(wl)[1]
     pix = np.linspace(0, npix, 5, dtype=int)
     try:
-        hdulist = pyfits.open(input_file, mode = 'update')
+        hdulist = fits.open(input_file, mode = 'update')
     except IOError:
         print ("ERROR: Cannot open file '%s'" % input_file)
     finally:
@@ -18,7 +18,7 @@ def update_snr(input_file):
         # Update information about sp. resolution
         refspec = prihdr['REFSPEC'].replace('_disp.txt', '_WCS.fits')
         try:
-            hduref = pyfits.open(refspec)
+            hduref = fits.open(refspec)
         except IOError:
             print ("ERROR: Cannot open file '%s'" % refspec)
         finally:

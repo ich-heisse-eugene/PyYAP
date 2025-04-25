@@ -1,8 +1,5 @@
-from sys import argv
-import astropy.io.fits as pyfits
+from astropy.io import fits
 import numpy as np
-
-from numpy.polynomial.chebyshev import chebval
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -24,18 +21,18 @@ def read_traces(x_coo, ap_file):
                 p = f[i].strip().rsplit()
                 poly_trace_coef = np.asarray(p[3:3+poly_order+1], dtype=float)
                 poly_width_coef = np.asarray(p[3+poly_order+1:], dtype=float)
-                Y.append(chebval(x_coo, poly_trace_coef))
-                FWHM.append(chebval(x_coo, poly_width_coef))
+                Y.append(np.polyval(poly_trace_coef, x_coo))
+                FWHM.append(np.polyval(poly_width_coef, x_coo))
         else:
             for i in range(4, 4+n_orders):
                 p = f[i].strip().rsplit()
                 poly_trace_coef = np.asarray(p[3:3+poly_order+1], dtype=float)
-                Y.append(chebval(x_coo, poly_trace_coef))
+                Y.append(np.polyval(poly_trace_coef, x_coo))
                 FWHM.append(np.repeat(float(p[3+poly_order+1]), len(x_coo)))
         print(f"{n_orders} orders read from file")
     return np.asarray(Y), np.asarray(FWHM)
 
-hdulist = pyfits.open(argv[1])
+hdulist = fits.open(argv[1])
 ordim = hdulist[0].data.copy()
 hdulist.close()
 

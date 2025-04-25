@@ -1,4 +1,4 @@
-from astropy.io import fits as pyfits
+from astropy.io import fits
 import os
 import numpy
 from sys import argv
@@ -541,7 +541,7 @@ def thar_manual(file_name):
     features_name = os.path.splitext(file_name)[0] + '.dat'
 ##    features_name = 'thar_new.dat'
 
-    hdulist = pyfits.open(file_name)
+    hdulist = fits.open(file_name)
     spectrum = hdulist[0].data.copy()
     prihdr = hdulist[0].header
     hdulist.close()

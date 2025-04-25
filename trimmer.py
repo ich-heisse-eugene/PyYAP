@@ -1,4 +1,4 @@
-import astropy.io.fits as pyfits
+from astropy.io import fits
 import os
 import numpy
 import copy
@@ -6,11 +6,11 @@ import shutil
 
 ##################################################################
 def trimmer(dir_name, list_name, area, flip):
-    with open(dir_name.joinpath(list_name), 'r') as f:
+    with open(os.path.join(dir_name, list_name), 'r') as f:
         for line in f:
             name = line.strip()
             try:
-                hdulist = pyfits.open(name, mode = 'update', do_not_scale_image_data=True)
+                hdulist = fits.open(name, mode = 'update', do_not_scale_image_data=True)
                 prihdr = hdulist[0].header
                 data = hdulist[0].data.copy()
                 hdulist.close()

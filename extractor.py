@@ -1,7 +1,6 @@
-import astropy.io.fits as pyfits
+from astropy.io import fits
 import os
 import numpy as np
-from numpy.polynomial.chebyshev import chebval
 import scipy.interpolate
 import shutil
 
@@ -11,7 +10,6 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 from skimage.exposure import equalize_hist
-from numpy.polynomial.chebyshev import chebval
 
 import warnings
 warnings.simplefilter("ignore")
@@ -34,13 +32,13 @@ def read_traces(x_coo, ap_file):
                 p = f[i].strip().rsplit()
                 poly_trace_coef = np.asarray(p[3:3+poly_order+1], dtype=float)
                 poly_width_coef = np.asarray(p[3+poly_order+1:], dtype=float)
-                Y.append(chebval(x_coo, poly_trace_coef))
-                FWHM.append(chebval(x_coo, poly_width_coef))
+                Y.append(np.polyval(poly_trace_coef, x_coo))
+                FWHM.append(np.polyval(poly_width_coef, x_coo))
         else:
             for i in range(4, 4+n_orders):
                 p = f[i].strip().rsplit()
                 poly_trace_coef = np.asarray(p[3:3+poly_order+1], dtype=float)
-                Y.append(chebval(x_coo, poly_trace_coef))
+                Y.append(np.polyval(poly_trace_coef, x_coo))
                 FWHM.append(np.repeat(float(p[3+poly_order+1]), len(x_coo)))
         print(f"{n_orders} orders read from file")
     return np.asarray(Y), np.asarray(FWHM)
@@ -51,7 +49,7 @@ def fox(file_name, sflat_image, ap_file, ex_type, aperture):
     logging.info(f"Extraction spectra from {file_name} started")
 
     #read file with super flat
-    hdulist = pyfits.open(sflat_image)
+    hdulist = fits.open(sflat_image)
     s_flat_data = hdulist[0].data.copy()
     prihdr = hdulist[0].header
     if 'RDNOISE' in prihdr:
@@ -73,7 +71,7 @@ def fox(file_name, sflat_image, ap_file, ex_type, aperture):
     hdulist.close()
 
     #read file with spectra
-    hdulist = pyfits.open(file_name)
+    hdulist = fits.open(file_name)
     spectra_data = hdulist[0].data.copy()
     prihdr = hdulist[0].header
     hdulist.close()
@@ -192,7 +190,7 @@ def fox(file_name, sflat_image, ap_file, ex_type, aperture):
     s_ex = np.fliplr(s_ex)
 
 
-    hdu = pyfits.PrimaryHDU(s_ex)
+    hdu = fits.PrimaryHDU(s_ex)
     hdu.header = prihdr
     hdu.header['HISTORY'] = 'extracted by '+ex_type
     hdu.header['HISTORY'] = 'flip X'
@@ -218,7 +216,7 @@ def fox(file_name, sflat_image, ap_file, ex_type, aperture):
 
     err_ex=np.float32(err_ex)
     err_ex = np.fliplr(err_ex)
-    hdu = pyfits.PrimaryHDU(err_ex)
+    hdu = fits.PrimaryHDU(err_ex)
     hdu.header = prihdr
     hdu.header['IMAGETYP'] = 'S/N map'
     err_file = os.path.splitext(file_name)[0] + '_err.fits'

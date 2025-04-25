@@ -7,13 +7,27 @@ import astropy.time as Time
 import astropy.units as u
 from astropy import coordinates as coord, units as u
 
+def fill_from_simbad(objname):
+    print(f"Requesting information for {objname} from SIMBAD")
+    simbad_session = Simbad()
+    try:
+        query_result = simbad_session.query_object(objname)
+    except Exception as e:
+        print(f"Error: {e}. Leave the wavelength scale uncorrected")
+        ra = ''; dec = ''
+    else:
+        coo = coord.SkyCoord(ra=query_result['ra'], dec=query_result['dec'])
+        ra = coo.ra.to(u.hourangle).to_string(sep=":", precision=2)[0]
+        dec = coo.dec.to(u.degree).to_string(sep=":", precision=2)[0]
+    return ra, dec
+
 def fill_headers(file_names, device):
     if device == 'mres' or device == 'umres':
         obsname = 'TNO'         # Thai National Observatory, Doi Inthanon
         obslat = 18.573828      # Latitude of the observatory
         obslon = 98.4817485     # Longitude of the observatory, E
         obsalt = 2549.          # Altitude of the observatory
-        gain = 0.55             # Electronic gain in e-/ADU. Andor Newton
+        gain = 1             # Electronic gain in e-/ADU. Andor Newton
         rdnoise = 2.0           # CCD readout noise
         if device == 'umres':   # Andor iKon-M
             gain = 1.13         # Electronic gain in e-/ADU
@@ -111,32 +125,19 @@ def fill_headers(file_names, device):
             elif (objnames[ii].lower() == "dark"):
                     hdr.set('IMAGETYP', 'DARK', '')
 
-            if (objnames[ii].lower() != "flat") and (objnames[ii].lower() != "thar") \
-               and (objnames[ii].lower() != "bias") and (objnames[ii].lower() != "sky") and \
-               (objnames[ii].lower() != "dark"):
-               if 'RA' in hdr and 'DEC' in hdr:
-                   if hdr['RA'].strip() != '' and hdr['DEC'].strip() != '':
-                      ra = hdr['RA']; dec = hdr['DEC']
-                else:
-                    print(f"Requesting information for {objnames[ii]} from SIMBAD")
-                    simbad_session = Simbad()
-                    try:
-                        query_result = simbad_session.query_object(objnames[ii])
-                    except Exception as e:
-                        print(f"Error: {e}. Leave the wavelength scale uncorrected")
-                        ra = ''; dec = ''
-                    else:
-                        coo = coord.SkyCoord(ra=query_result['ra'], dec=query_result['dec'])
-                        ra = coo.ra.to(u.hourangle).to_string(sep=":", precision=2)[0]
-                        dec = coo.dec.to(u.degree).to_string(sep=":", precision=2)[0]
-                        hdr.set('RA', ra, 'RA in hours')
-                        hdr.set('DEC', dec, 'DEC in degrees')
-               if 'EPOCH' not in hdr:
-                   hdr.set('EPOCH', 2000., 'EPOCH of coordinates')
-               observat = coord.EarthLocation.from_geodetic(obslon, obslat, obsalt * u. m)
-               dateobs = np.char.replace(tm_mid.fits, 'T', ' ')
-               dateobs = Time.Time(dateobs, scale='utc', location=observat)
-               if ra != '' and dec != '':
+            if (objnames[ii].lower() != "flat") and (objnames[ii].lower() != "thar") and (objnames[ii].lower() != "bias") and (objnames[ii].lower() != "sky") and (objnames[ii].lower() != "dark"):
+                if 'RA' not in hdr and 'DEC' not in hdr:
+                    ra, dec = fill_from_simbad(objnames[ii])
+                    hdr.set('RA', ra, 'RA in hours')
+                    hdr.set('DEC', dec, 'DEC in degrees')
+                elif hdr['RA'].strip() != '' and hdr['DEC'].strip() != '':
+                        ra = hdr['RA']; dec = hdr['DEC']
+                if 'EPOCH' not in hdr:
+                    hdr.set('EPOCH', 2000., 'EPOCH of coordinates')
+                observat = coord.EarthLocation.from_geodetic(obslon, obslat, obsalt * u. m)
+                dateobs = np.char.replace(tm_mid.fits, 'T', ' ')
+                dateobs = Time.Time(dateobs, scale='utc', location=observat)
+                if ra != '' and dec != '':
                     star = coord.SkyCoord(ra, dec, unit=(u.hourangle, u.deg), frame='icrs')
                     ltt_bary = dateobs.light_travel_time(star)
                     bjd = dateobs.jd + ltt_bary.value
@@ -145,7 +146,7 @@ def fill_headers(file_names, device):
                     hdr.set('BARYCORR', bcr.to(u.km/u.s).value, 'Barycentric correction')
                 else:
                     hdr.set('JD', dateobs.jd, 'Julian Date')
-               hdr.set('IMAGETYP', 'OBJ', '')
+                hdr.set('IMAGETYP', 'OBJ', '')
             if 'OBJNAME' not in hdr and 'OBJECT' not in hdr:
                 hdr['OBJNAME'] = objnames[ii]
             elif 'OBJNAME' not in hdr:

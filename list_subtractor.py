@@ -1,4 +1,4 @@
-import astropy.io.fits as pyfits
+from astropy.io import fits
 import os
 import numpy
 
@@ -6,7 +6,7 @@ import warnings
 warnings.simplefilter("ignore")
 ##################################################################
 def list_subtractor(list_name, subtrahend_name, stype):
-    hdulist = pyfits.open(subtrahend_name)
+    hdulist = fits.open(subtrahend_name)
     delta = hdulist[0].data.copy()
     prihdr = hdulist[0].header
     hdulist.close()
@@ -14,7 +14,7 @@ def list_subtractor(list_name, subtrahend_name, stype):
     with open(list_name, 'r') as f:
         for line in f:
             name = line.strip()
-            hdulist = pyfits.open(name, mode = 'update')
+            hdulist = fits.open(name, mode = 'update')
             data = hdulist[0].data.copy()
             prihdr = hdulist[0].header
             hdulist.close()
@@ -22,8 +22,8 @@ def list_subtractor(list_name, subtrahend_name, stype):
             if data.shape[0]==delta.shape[0] and data.shape[1]==delta.shape[1]:
                 data=numpy.float32(data)-delta
                 prihdr['HISTORY'] = stype+' subtracted'
-                hdu = pyfits.PrimaryHDU(data, prihdr)
-                hdulist = pyfits.HDUList([hdu])
+                hdu = fits.PrimaryHDU(data, prihdr)
+                hdulist = fits.HDUList([hdu])
                 hdulist.writeto(name, overwrite=True)
             else:
                 print ("Frame", name, "has wrong size")

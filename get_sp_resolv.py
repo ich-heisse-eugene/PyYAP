@@ -9,7 +9,7 @@
     2021-01-22. Replaced some symbols with letters in Latin script.
 """
 import datetime
-from astropy.io import fits as pyfits
+from astropy.io import fits
 import numpy as np
 from scipy.signal import find_peaks
 from scipy.optimize import curve_fit
@@ -37,7 +37,7 @@ def read_multispec(input_file):
     ES. 2020-10-21
     """
     try:
-        hdu = pyfits.open(input_file)
+        hdu = fits.open(input_file)
     except Exception:
         print("Error while opening the input file")
     finally:
@@ -321,7 +321,7 @@ def get_sp_resolv(input_file):
     w, sp = read_multispec(input_file)
     R = make_report_resol(w, sp, input_file, False)
     try:
-        hdulist = pyfits.open(input_file, mode = 'update')
+        hdulist = fits.open(input_file, mode = 'update')
         prihdr = hdulist[0].header
     except IOError:
         print ("Input/output error. File:", name)

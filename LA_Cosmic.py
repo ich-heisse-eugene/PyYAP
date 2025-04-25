@@ -18,7 +18,7 @@
 
 
 import sys, numpy
-import astropy.io.fits as pyfits
+from astropy.io import fits
 from types import *
 from LA_image import *
 
@@ -164,6 +164,5 @@ def detCos(image,  out_clean,
             out = out.replaceMaskMedian(box_x, box_y, replace_error=None)  # replace possible corrput pixel with zeros
     if verbose==True:
       print ('Cleaned image is stored in file: %s'%(out_clean))
-      #print ('Cosmics mask is stored in file: %s'%(out_mask))
     out = out/gain
     out.writeFitsData(out_clean, extension_data=0, extension_mask=0, extension_error=0)

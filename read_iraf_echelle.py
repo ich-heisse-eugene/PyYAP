@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from sys import argv, exit
-from astropy.io import fits as pyfits
+from astropy.io import fits
 import numpy as np
 import warnings
 warnings.filterwarnings("ignore")
@@ -22,7 +22,7 @@ def read_multispec(input_file):
     ES. 2020-10-21
     """
     try:
-        hdu = pyfits.open(input_file)
+        hdu = fits.open(input_file)
     except Exception:
         print("Error while opening the input file")
     finally:

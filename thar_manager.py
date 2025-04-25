@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
-import astropy.io.fits as pyfits
+from astropy.io import fits
 import numpy as np
 
 import logging
 
 def thar_manager(obj_name, thar_list):
 
-    hdulist = pyfits.open(obj_name)
+    hdulist = fits.open(obj_name)
     data = hdulist[0].data.copy()
     prihdr = hdulist[0].header
     hdulist.close()
@@ -23,7 +23,7 @@ def thar_manager(obj_name, thar_list):
         for line in f:
             name = line.strip()
             try:
-                prihdr = pyfits.getheader(name)
+                prihdr = fits.getheader(name)
                 thar_name.append(name)
                 try:
                     diff_time = datetime.strptime(prihdr['DATE-OBS'], "%Y-%m-%dT%H:%M:%S.%f") - middle_time

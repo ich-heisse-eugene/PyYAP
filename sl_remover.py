@@ -1,8 +1,7 @@
-import astropy.io.fits as pyfits
+from astropy.io import fits
 import os
 import shutil
 import numpy as np
-from numpy.polynomial.chebyshev import chebval
 
 import logging
 
@@ -35,13 +34,13 @@ def read_traces(x_coo, ap_file):
                 p = f[i].strip().rsplit()
                 poly_trace_coef = np.asarray(p[3:3+poly_order+1], dtype=float)
                 poly_width_coef = np.asarray(p[3+poly_order+1:], dtype=float)
-                Y.append(chebval(x_coo, poly_trace_coef))
-                FWHM.append(chebval(x_coo, poly_width_coef))
+                Y.append(np.polyval(poly_trace_coef, x_coo))
+                FWHM.append(np.polyval(poly_width_coef, x_coo))
         else:
             for i in range(4, 4+n_orders):
                 p = f[i].strip().rsplit()
                 poly_trace_coef = np.asarray(p[3:3+poly_order+1], dtype=float)
-                Y.append(chebval(x_coo, poly_trace_coef))
+                Y.append(np.polyval(poly_trace_coef, x_coo))
                 FWHM.append(np.repeat(float(p[3+poly_order+1]), len(x_coo)))
         print(f"{n_orders} orders read from file")
     return np.asarray(Y), np.asarray(FWHM)
@@ -51,7 +50,7 @@ def sl_remover(dir_name, Path2Temp, file_name, ap_file, step, x_order, y_order, 
     logging.info(f"scatter light removing for {file_name} started")
 
     #read image file
-    hdulist = pyfits.open(dir_name.joinpath(file_name))
+    hdulist = fits.open(os.path.join(dir_name, file_name))
     arr = hdulist[0].data.copy()
     prihdr = hdulist[0].header
     hdulist.close()
@@ -173,8 +172,8 @@ def sl_remover(dir_name, Path2Temp, file_name, ap_file, step, x_order, y_order, 
         matplotlib.pyplot.show()
 
     sc_light=np.float32(sc_light)
-    hdu = pyfits.PrimaryHDU(sc_light)
-    scatter_file = Path2Temp.joinpath(os.path.splitext(file_name)[0] + '_SLMap.fits')
+    hdu = fits.PrimaryHDU(sc_light)
+    scatter_file = os.path.join(Path2Temp, os.path.splitext(file_name)[0] + '_SLMap.fits')
     hdu.header['SOURCE'] = file_name
     hdu.header['IMAGETYP'] = 'scattered light'
     hdu.writeto(scatter_file, overwrite=True)
@@ -184,7 +183,7 @@ def sl_remover(dir_name, Path2Temp, file_name, ap_file, step, x_order, y_order, 
     arr_new=np.float32(arr_new)
     cleared_file = ''
     hdulist[0].data = arr_new
-    cleared_file = dir_name.joinpath(os.path.splitext(file_name)[0] + '_SLR.fits')
+    cleared_file = os.path.join(dir_name, os.path.splitext(file_name)[0] + '_SLR.fits')
     if subtract:
         prihdr['HISTORY'] = 'scatter light removed'
     hdulist.writeto(cleared_file, overwrite=True)
