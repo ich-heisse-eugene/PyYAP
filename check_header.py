@@ -130,7 +130,7 @@ def fill_headers(file_names, device):
                     ra, dec = fill_from_simbad(objnames[ii])
                     hdr.set('RA', ra, 'RA in hours')
                     hdr.set('DEC', dec, 'DEC in degrees')
-                elif hdr['RA'].strip() != '' and hdr['DEC'].strip() != '':
+                elif str(hdr['RA']).strip() != '' and str(hdr['DEC']).strip() != '':
                         ra = hdr['RA']; dec = hdr['DEC']
                 if 'EPOCH' not in hdr:
                     hdr.set('EPOCH', 2000., 'EPOCH of coordinates')

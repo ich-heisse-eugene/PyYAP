@@ -270,19 +270,24 @@ def thar_auto(dir_name, file_name, OS, X_Order, Y_Order, view):
     zero_features = []  #list with features for first identification
 
     #open file with last thar
-    hdulist = fits.open(old_thar)
-    zero = hdulist[0].data.copy()
-    hdulist.close()
-    zero = np.nan_to_num(zero)
+    with fits.open(old_thar) as hdulist:
+        zero = hdulist[0].data.copy()
+        zero = np.nan_to_num(zero)
 
     #open file with new thar
     print(file_name)
     logging.info(file_name)
-    hdulist = fits.open(file_name) ## dir_name+file_name (for Windows???)
-    spectrum = hdulist[0].data.copy()
-    prihdr = hdulist[0].header
-    hdulist.close()
-    spectrum =np.nan_to_num(spectrum)
+    with fits.open(file_name) as hdulist:
+        prihdr = hdulist[0].header
+        spectrum = hdulist[0].data.copy()
+        if 'EXPTIME' in prihdr:
+            exptime = prihdr['EXPTIME']
+        elif 'EXPOSURE' in prihdr:
+            exptime = prihdr['EXPOSURE']
+        else:
+            exptime = 1
+        spectrum = spectrum / exptime
+        spectrum = np.nan_to_num(spectrum)
     order = 0
 
     #read short file with features
