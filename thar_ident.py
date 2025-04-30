@@ -1,4 +1,5 @@
 from astropy.io import fits
+import math
 import os
 import numpy
 from sys import argv
@@ -19,11 +20,11 @@ matplotlib.pyplot.ion()
 ####parameters
 base_name = 'thar.dat'
 FWHM = 6
-OS = 51         # Absolute number of the first (red) order
-threshold = 0.1
+OS = 36         # Absolute number of the first (red) order
+threshold = 0.001
 tolerance = 0.05
-X_Order = 6
-Y_Order = 6
+X_Order = 5
+Y_Order = 5
 
 ##################################################################
 #define hot keys
@@ -323,7 +324,7 @@ def del_feature(x_coo, line):
 ### search local maximum in current order
 def auto_search(threshold, tolerance):
     row = copy(spectrum[order,0:spectrum.shape[1]])                                     #copy of one row
-    row_S = scipy.ndimage.filters.gaussian_filter(row, int(FWHM/3))                     #smooth
+    row_S = scipy.ndimage.gaussian_filter(row, int(FWHM/3))                     #smooth
     row_f = []                                                                          #array for auto features
     for jj in range (loc_area,row_S.shape[0]-loc_area):                                                                                        #background
         if (row_S[jj]-row_S[jj-1]>0 and row_S[jj+1]-row_S[jj]<0):                       #search for local extremum of smoothed spectra
@@ -544,6 +545,7 @@ def thar_manual(file_name):
     hdulist = fits.open(file_name)
     spectrum = hdulist[0].data.copy()
     prihdr = hdulist[0].header
+    spectrum = spectrum / prihdr['EXPTIMES']
     hdulist.close()
     order = 0
 
