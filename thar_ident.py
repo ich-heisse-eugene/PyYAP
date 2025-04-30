@@ -545,7 +545,7 @@ def thar_manual(file_name):
     hdulist = fits.open(file_name)
     spectrum = hdulist[0].data.copy()
     prihdr = hdulist[0].header
-    spectrum = spectrum / prihdr['EXPTIMES']
+    spectrum = spectrum / prihdr['EXPTIME']
     hdulist.close()
     order = 0
 
