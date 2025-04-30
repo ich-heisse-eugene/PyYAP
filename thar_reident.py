@@ -5,7 +5,7 @@ import scipy.ndimage
 from scipy.optimize import curve_fit
 from scipy import optimize
 import matplotlib
-import matplotlib.pyplot
+import matplotlib.pyplot as plt
 import logging
 
 def write_disp(name, data, OS, X_Order, Y_Order, prihdr):
@@ -51,8 +51,8 @@ def WL_checker(WL, o, OS, features):
 ####################################################################
 ###1D Moffat fitting/center search
 def center(s_order, x_coo, y_coo, bckgrnd):
-    fit_area = int(FWHM*0.7)
-    ROI =  np.copy(s_order[int(x_coo-fit_area):int(x_coo+fit_area)])
+    fit_area = 1.22*FWHM
+    ROI = np.copy(s_order[int(x_coo-fit_area):int(x_coo+fit_area)])
     X=np.arange(0, ROI.shape[0])
     x0 = int(ROI.shape[0]/2)
     #moffat fitting
@@ -62,7 +62,7 @@ def center(s_order, x_coo, y_coo, bckgrnd):
     try:
         popt, pcov = curve_fit(moffat, X, ROI, p0, maxfev=10000)
     except:
-        return(0)
+        return 0
     return (popt[4]-fit_area)
 
 ####################################################################
@@ -112,19 +112,19 @@ def dispers_p(features, X_Order, Y_Order, view):#, fit_params):
     logging.info(f"RMS(km/s): {round(np.std((residual/W)*300000.0),5):.2f}")
 
     if view:
-        fig = matplotlib.pyplot.figure(1, figsize=(16, 5))
+        fig = plt.figure(1, figsize=(16, 5))
         ax = fig.add_subplot(111)
         points = O.shape[0]
 ##        residual = (residual/W)*300000.0
         rms = round(np.std(residual),5)
         label_data = 'Chebyshev, Xorder='+str(X_Order)+', Yorder='+str(Y_Order)+',' + ' points='+ str(points)  + ', RMS=' + str(rms)
-        matplotlib.pyplot.cla()
+        plt.cla()
         ax.set_xlim([np.min(X), np.max(X)])
         ax.plot(X, residual, 'go')
-        matplotlib.pyplot.title(label_data)
-        matplotlib.pyplot.ylabel('Angstrom', fontsize=15)
-        matplotlib.pyplot.xlabel('Pixel', fontsize=15)
-        matplotlib.pyplot.show()
+        plt.title(label_data)
+        plt.ylabel('Angstrom', fontsize=15)
+        plt.xlabel('Pixel', fontsize=15)
+        plt.show()
 
     return (C, features, points, rms)
 
@@ -134,7 +134,7 @@ def add_lines(spectrum, OS, new_features, thar, disp_params, Y_Order):
     for ii in range(0, spectrum.shape[0]):
         old_len = len(new_features)
         row = spectrum[ii,:]                                                                #copy one order
-        row_S = scipy.ndimage.filters.gaussian_filter(row, int(FWHM/3))                     #smooth
+        row_S = scipy.ndimage.gaussian_filter(row, int(FWHM/3))                     #smooth
         row_f = []                                                                          #array for auto features
 ##        loc_area = int(FWHM*2)
         for jj in range (int(FWHM*2),row_S.shape[0]-int(FWHM*2)):
@@ -165,46 +165,50 @@ def add_lines(spectrum, OS, new_features, thar, disp_params, Y_Order):
 ####################################################################
 ###search shift of order
 def search_shift(s_order, z_order,a):
-    shift=[]
-    for ii in range(-max_shift, max_shift):
-        s_shift=ii
-        s_data = s_order
-        s_x = np.arange(0, len(s_data), 1)
-        s_x = s_x+s_shift
-
-        z_data = z_order
-        z_x = np.arange(0, len(z_data), 1)
-
-        #check and fix arrays length
-        if (len(z_data)-len(s_data))>0:
-            add = np.zeros(len(z_data)-len(s_data))
-            s_data = np.append(s_data, add)
-
-        if (len(z_data)-len(s_data))<0:
-            add = np.zeros(len(s_data)-len(z_data))
-            z_data = np.append(z_data, add)
-
-        #add shift
-        if s_shift>0:
-            add = np.zeros(s_shift)
-            z_data = np.append(z_data, add)
-            s_data = np.append(add, s_data)
-        else:
-            add = np.zeros(-s_shift)
-            s_data = np.append(s_data, add)
-            z_data = np.append(add, z_data)
-
-        #trim zeros
-        index = np.arange(0, len(add), 1, int)
-        z_data = np.delete(z_data, index)
-        s_data = np.delete(s_data, index)
-        index = np.arange(len(z_data)-len(add), len(z_data), 1, int)
-        z_data = np.delete(z_data, index)
-        s_data = np.delete(s_data, index)
-        delta = np.sum((z_data-s_data)*(z_data-s_data))
-        shift.append(delta)
-
-    s_shift = np.argmin(shift)-max_shift
+    ccf = np.correlate(s_order, z_order, mode='full')
+    ccf = ccf / ccf.max()
+    x = np.arange(len(ccf))
+    s_shift = len(ccf)//2 - np.argmax(ccf)
+    # shift=[]
+    # for ii in range(-max_shift, max_shift):
+    #     s_shift=ii
+    #     s_data = s_order
+    #     s_x = np.arange(0, len(s_data), 1)
+    #     s_x = s_x+s_shift
+    #
+    #     z_data = z_order
+    #     z_x = np.arange(0, len(z_data), 1)
+    #
+    #     #check and fix arrays length
+    #     if (len(z_data)-len(s_data))>0:
+    #         add = np.zeros(len(z_data)-len(s_data))
+    #         s_data = np.append(s_data, add)
+    #
+    #     if (len(z_data)-len(s_data))<0:
+    #         add = np.zeros(len(s_data)-len(z_data))
+    #         z_data = np.append(z_data, add)
+    #
+    #     #add shift
+    #     if s_shift>0:
+    #         add = np.zeros(s_shift)
+    #         z_data = np.append(z_data, add)
+    #         s_data = np.append(add, s_data)
+    #     else:
+    #         add = np.zeros(-s_shift)
+    #         s_data = np.append(s_data, add)
+    #         z_data = np.append(add, z_data)
+    #
+    #     #trim zeros
+    #     index = np.arange(0, len(add), 1, int)
+    #     z_data = np.delete(z_data, index)
+    #     s_data = np.delete(s_data, index)
+    #     index = np.arange(len(z_data)-len(add), len(z_data), 1, int)
+    #     z_data = np.delete(z_data, index)
+    #     s_data = np.delete(s_data, index)
+    #     delta = np.sum((z_data-s_data)*(z_data-s_data))
+    #     shift.append(delta)
+    #
+    # s_shift = np.argmin(shift)-max_shift
     return(s_shift)
 
 ####################################################################
@@ -234,14 +238,11 @@ def reidentify_features(s_order, OS, zero_features, line, shift, new_features):
 def first_ident(spectrum, zero, zero_features, OS):
     a=0
     new_features=[]
-    #for every order
+    #for each order
     found=0
-    for ii in range(0, min(zero.shape[0], spectrum.shape[0])):#zero.shape[0]):
-        s_order = spectrum[ii,:]                #copy one order
+    for ii in range(0, spectrum.shape[0]):
+        s_order = spectrum[ii,:]
         z_order = zero[ii,:]
-##        shift = search_shift(s_order, z_order)  #get shift
-        if ii >53:
-            a=1
         shift = search_shift(s_order, z_order,a)  #get shift
         new_features = reidentify_features(s_order, OS, zero_features, ii, shift, new_features)
         print(f"shift= {str(shift)}\t'{len(new_features) - found:.0f} features identified in order {ii+OS:.0f}")
@@ -259,7 +260,7 @@ def thar_auto(dir_name, file_name, OS, X_Order, Y_Order, view):
     global line_list
     line_list = 'thar.dat'               #name of full features list for thar lamp
     global FWHM
-    FWHM = 6                                        #approximate FWHM of profile
+    FWHM = 3                                        #approximate FWHM of profile
     global threshold
     threshold = 0.001                               #threshold for automatic search of features, 0.1 for FOX
     global tolerance
@@ -286,7 +287,7 @@ def thar_auto(dir_name, file_name, OS, X_Order, Y_Order, view):
             exptime = prihdr['EXPOSURE']
         else:
             exptime = 1
-        spectrum = spectrum / exptime
+        # spectrum = spectrum / exptime
         spectrum = np.nan_to_num(spectrum)
     order = 0
 
@@ -304,7 +305,7 @@ def thar_auto(dir_name, file_name, OS, X_Order, Y_Order, view):
     else:
         print('File ', old_thar_features, ' not found')
         logging.error(f"File {old_thar_features} not found")
-        return (None)
+        return None
 
     #read full thar lines list
     if  os.path.exists(line_list):
@@ -324,19 +325,19 @@ def thar_auto(dir_name, file_name, OS, X_Order, Y_Order, view):
         print('File ', line_list, ' not found')
         logging.info(f"File {line_list} not found")
 
-    new_features=first_ident(spectrum, zero, zero_features, OS)                 #identify and centering features from short list
+    new_features = first_ident(spectrum, zero, zero_features, OS)                 #identify and centering features from short list
     write_new_short(spectrum, new_features, prihdr, dir_name)                         #write new short list for identification
     print('New short list saved')
     logging.info('New short list saved')
-    disp_params, new_features, points, rms = dispers_p (new_features, X_Order, Y_Order, view)       #search first solution for short list
-    new_features = add_lines(spectrum, OS, new_features, thar, disp_params, Y_Order)                #add lines
-    disp_params, new_features, points, rms = dispers_p (new_features, X_Order, Y_Order, view)       #search solution for long list
+    disp_params, new_features, points, rms = dispers_p(new_features, X_Order, Y_Order, view)       #search first solution for short list
+    new_features = add_lines(spectrum, OS, new_features, thar, disp_params, Y_Order)               #add lines
+    disp_params, new_features, points, rms = dispers_p(new_features, X_Order, Y_Order, view)       #search solution for long list
     write_disp(file_name, disp_params, OS, X_Order, Y_Order, prihdr)
     hdulist[0].data = spectrum
     write_features(file_name, new_features, prihdr)
     hdulist.writeto(file_name, overwrite=True)
 
-    fig = matplotlib.pyplot.figure(figsize=(16, 5), tight_layout=True)
+    fig = plt.figure(figsize=(16, 5), tight_layout=True)
     ax = fig.add_subplot(111)
     local=np.asarray(new_features)
     O = np.copy(local[:, 0])
@@ -346,13 +347,13 @@ def thar_auto(dir_name, file_name, OS, X_Order, Y_Order, view):
     residual = W-residual
     rms = round(np.std(residual),5)
     label_data = 'Chebyshev, Xorder='+str(X_Order)+', Yorder='+str(Y_Order)+',' + ' points='+ str(O.shape[0])  + ', RMS=' + str(rms) + r'\AA' + f" ({round(np.std((residual/W)*300000.0),5):.2f} km/s)"
-    matplotlib.pyplot.cla()
+    plt.cla()
     ax.plot(O, residual, 'go')
-    matplotlib.pyplot.title(label_data)
-    matplotlib.pyplot.ylabel('Angstroms', fontsize=15)
-    matplotlib.pyplot.xlabel('Order', fontsize=15)
-    matplotlib.pyplot.savefig(file_name.replace('.fits', '_disp.pdf'), dpi=350)
+    plt.title(label_data)
+    plt.ylabel('Angstroms', fontsize=15)
+    plt.xlabel('Order', fontsize=15)
+    plt.savefig(file_name.replace('.fits', '_disp.pdf'), dpi=350)
     if view:
-        matplotlib.pyplot.show()
+        plt.show()
 
-    return (None)
+    return None
