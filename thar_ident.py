@@ -1,5 +1,5 @@
-from astropy.io import fits
 import math
+from astropy.io import fits
 import os
 import numpy
 from sys import argv
@@ -257,13 +257,13 @@ def draw_spec(spectrum, line):
                 x_coo = features[ii][1]
                 WL = features[ii][2]
                 y_coo = features[ii][3]
-                col='go'
+                col='g^'
                 if color[ii]==0:
-                    col='bo'
-                ax.plot(x_coo, y_coo, col)
-                ax.annotate(WL, xy=(x_coo,y_coo+1), rotation=90,\
+                    col='b^'
+                ax.plot(x_coo, 0, col)
+                ax.annotate(WL, xy=(x_coo, 0), rotation=90,\
                             horizontalalignment='center',\
-                            verticalalignment='baseline',  color='b')
+                            verticalalignment='top',  color='b')
     matplotlib.pyplot.draw()
 
 ####################################################################
@@ -540,12 +540,13 @@ def thar_manual(file_name):
 
     fits_name = file_name
     features_name = os.path.splitext(file_name)[0] + '.dat'
-##    features_name = 'thar_new.dat'
 
     hdulist = fits.open(file_name)
-    spectrum = hdulist[0].data.copy()
     prihdr = hdulist[0].header
-    spectrum = spectrum / prihdr['EXPTIME']
+    spectrum = hdulist[0].data.copy()
+    expthar = prihdr['EXPTIME']
+    print(f"Texp = {expthar} s")
+    spectrum = spectrum / expthar
     hdulist.close()
     order = 0
 
