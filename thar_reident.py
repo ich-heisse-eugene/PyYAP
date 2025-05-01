@@ -8,6 +8,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 import logging
 
+c_const = 299792.458
+
 def write_disp(name, data, OS, X_Order, Y_Order, prihdr):
     f_name = os.path.splitext(name)[0] + "_disp.txt"
     text_file = open(f_name, "w")
@@ -60,7 +62,7 @@ def center(s_order, x_coo, y_coo, bckgrnd):
     moffat = lambda x, A, B, C, D, x0: A*(1 + ((x-x0)/B)**2)**(-C)+D
     p0 = np.array([y_coo, 3, 3, bckgrnd, x0])
     try:
-        popt, pcov = curve_fit(moffat, X, ROI, p0, maxfev=10000)
+        popt, pcov = curve_fit(moffat, X, ROI, p0, maxfev=10000, method='trf')
     except:
         return 0
     return (popt[4]-fit_area)
@@ -106,18 +108,17 @@ def dispers_p(features, X_Order, Y_Order, view):#, fit_params):
     points = O.shape[0]
     print(f"Lines used: {points}")
     print(f"RMS(Angstrom): {rms:.4f}")
-    print(f"RMS(km/s): {round(np.std((residual/W)*300000.0),5):.2f}")
+    print(f"RMS(km/s): {round(np.std((residual/W)*c_const),5):.2f}")
     logging.info(f"Lines used: {points}")
     logging.info(f"RMS(Angstrom): {rms:.4f}")
-    logging.info(f"RMS(km/s): {round(np.std((residual/W)*300000.0),5):.2f}")
+    logging.info(f"RMS(km/s): {round(np.std((residual/W)*c_const),5):.2f}")
 
     if view:
         fig = plt.figure(1, figsize=(16, 5))
         ax = fig.add_subplot(111)
         points = O.shape[0]
-##        residual = (residual/W)*300000.0
         rms = round(np.std(residual),5)
-        label_data = 'Chebyshev, Xorder='+str(X_Order)+', Yorder='+str(Y_Order)+',' + ' points='+ str(points)  + ', RMS=' + str(rms)
+        label_data = f"Chebyshev, Xorder={X_Order}, Yorder={Y_Order}, {points} points, RMS={rms} Angstrom ({np.std((residual/W)*c_const):.2f} km/s)"
         plt.cla()
         ax.set_xlim([np.min(X), np.max(X)])
         ax.plot(X, residual, 'go')
@@ -134,9 +135,8 @@ def add_lines(spectrum, OS, new_features, thar, disp_params, Y_Order):
     for ii in range(0, spectrum.shape[0]):
         old_len = len(new_features)
         row = spectrum[ii,:]                                                                #copy one order
-        row_S = scipy.ndimage.gaussian_filter(row, int(FWHM/3))                     #smooth
+        row_S = scipy.ndimage.gaussian_filter(row, int(FWHM/3))                             #smooth
         row_f = []                                                                          #array for auto features
-##        loc_area = int(FWHM*2)
         for jj in range (int(FWHM*2),row_S.shape[0]-int(FWHM*2)):
             if (row_S[jj]-row_S[jj-1]>0 and row_S[jj+1]-row_S[jj]<0):                       #search for local extremum of smoothed spectra
                 offset = get_max(row, jj)                                                   #search max pixel near click
@@ -164,52 +164,23 @@ def add_lines(spectrum, OS, new_features, thar, disp_params, Y_Order):
     return (new_features)
 ####################################################################
 ###search shift of order
-def search_shift(s_order, z_order,a):
+def search_shift(s_order, z_order):
+    half_max_shift = 10
     ccf = np.correlate(s_order, z_order, mode='full')
     ccf = ccf / ccf.max()
     x = np.arange(len(ccf))
-    s_shift = len(ccf)//2 - np.argmax(ccf)
-    # shift=[]
-    # for ii in range(-max_shift, max_shift):
-    #     s_shift=ii
-    #     s_data = s_order
-    #     s_x = np.arange(0, len(s_data), 1)
-    #     s_x = s_x+s_shift
-    #
-    #     z_data = z_order
-    #     z_x = np.arange(0, len(z_data), 1)
-    #
-    #     #check and fix arrays length
-    #     if (len(z_data)-len(s_data))>0:
-    #         add = np.zeros(len(z_data)-len(s_data))
-    #         s_data = np.append(s_data, add)
-    #
-    #     if (len(z_data)-len(s_data))<0:
-    #         add = np.zeros(len(s_data)-len(z_data))
-    #         z_data = np.append(z_data, add)
-    #
-    #     #add shift
-    #     if s_shift>0:
-    #         add = np.zeros(s_shift)
-    #         z_data = np.append(z_data, add)
-    #         s_data = np.append(add, s_data)
-    #     else:
-    #         add = np.zeros(-s_shift)
-    #         s_data = np.append(s_data, add)
-    #         z_data = np.append(add, z_data)
-    #
-    #     #trim zeros
-    #     index = np.arange(0, len(add), 1, int)
-    #     z_data = np.delete(z_data, index)
-    #     s_data = np.delete(s_data, index)
-    #     index = np.arange(len(z_data)-len(add), len(z_data), 1, int)
-    #     z_data = np.delete(z_data, index)
-    #     s_data = np.delete(s_data, index)
-    #     delta = np.sum((z_data-s_data)*(z_data-s_data))
-    #     shift.append(delta)
-    #
-    # s_shift = np.argmin(shift)-max_shift
-    return(s_shift)
+    y_ccf = ccf[len(ccf)//2 - half_max_shift: len(ccf)//2 + half_max_shift+1]
+    x_ccf = np.arange(-half_max_shift, half_max_shift+1, 1)
+    s_shift = len(y_ccf)//2 - np.argmax(y_ccf)
+    gauss = lambda x,a,b,c,d: a*np.exp(-(x - b)**2/(2. * c**2)) + d
+    p0 = np.array([np.max(ccf), s_shift, 3., 0.])
+    try:
+        popt, pcov = curve_fit(gauss, x_ccf, y_ccf, p0, maxfev=10000)
+    except Exception:
+        shift = 0.0
+    else:
+        shift = popt[1]
+    return shift
 
 ####################################################################
 ###reidentify features from short list
@@ -236,17 +207,18 @@ def reidentify_features(s_order, OS, zero_features, line, shift, new_features):
 
 ######################################################################
 def first_ident(spectrum, zero, zero_features, OS):
-    a=0
     new_features=[]
     #for each order
     found=0
     for ii in range(0, spectrum.shape[0]):
         s_order = spectrum[ii,:]
+        s_order = s_order / np.max(s_order)
         z_order = zero[ii,:]
-        shift = search_shift(s_order, z_order,a)  #get shift
+        z_order = z_order / np.max(z_order)
+        shift = search_shift(s_order, z_order)  #get shift
         new_features = reidentify_features(s_order, OS, zero_features, ii, shift, new_features)
-        print(f"shift= {str(shift)}\t'{len(new_features) - found:.0f} features identified in order {ii+OS:.0f}")
-        logging.info(f"shift= {str(shift)}\t'{len(new_features) - found:.0f} features identified in order {ii+OS:.0f}")
+        print(f"shift= {shift:.2f} pix, {len(new_features) - found:.0f} features identified in order {ii+OS:.0f}")
+        logging.info(f"shift= {shift:.2f} pix, {len(new_features) - found:.0f} features identified in order {ii+OS:.0f}")
         found = len(new_features)
     return(new_features)
 
@@ -344,9 +316,9 @@ def thar_auto(dir_name, file_name, OS, X_Order, Y_Order, view):
     X = np.copy(local[:, 1])
     W = np.copy(local[:, 2])
     residual = solution(disp_params, Y_Order)(X,O)
-    residual = W-residual
+    residual = W - residual
     rms = round(np.std(residual),5)
-    label_data = 'Chebyshev, Xorder='+str(X_Order)+', Yorder='+str(Y_Order)+',' + ' points='+ str(O.shape[0])  + ', RMS=' + str(rms) + r'\AA' + f" ({round(np.std((residual/W)*300000.0),5):.2f} km/s)"
+    label_data = 'Chebyshev, Xorder='+str(X_Order)+', Yorder='+str(Y_Order)+',' + ' points='+ str(O.shape[0])  + ', RMS=' + str(rms) + r'\AA' + f" ({round(np.std((residual/W)*c_const),5):.2f} km/s)"
     plt.cla()
     ax.plot(O, residual, 'go')
     plt.title(label_data)
