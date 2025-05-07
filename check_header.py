@@ -115,20 +115,23 @@ def fill_headers(file_names, device):
                 if 'RA' in hdr and 'DEC' in hdr:
                     if hdr['RA'] != '' and hdr['DEC'] != '':
                         ra = hdr['RA']; dec = hdr['DEC']
+                elif 'MOUNTRA' in hdr and 'MOUNTDE' in hdr:
+                    if hdr['MOUNTRA'] != '' and hdr['MOUNTDE'] != '':
+                        ra = hdr['MOUNTRA']; dec = hdr['MOUNTDE']
+                else:
+                    print(f"Requesting information for {objnames[ii]} from SIMBAD")
+                    simbad_session = Simbad()
+                    try:
+                        query_result = simbad_session.query_object(objnames[ii])
+                    except Exception as e:
+                        print(f"Error: {e}. Leave the wavelength scale uncorrected")
+                        ra = ''; dec = ''
                     else:
-                        print(f"Requesting information for {objnames[ii]} from SIMBAD")
-                        simbad_session = Simbad()
-                        try:
-                            query_result = simbad_session.query_object(objnames[ii])
-                        except Exception as e:
-                            print(f"Error: {e}. Leave the wavelength scale uncorrected")
-                            ra = ''; dec = ''
-                        else:
-                            coo = coord.SkyCoord(ra=query_result['ra'], dec=query_result['dec'])
-                            ra = coo.ra.to(u.hourangle).to_string(sep=":", precision=2)[0]
-                            dec = coo.dec.to(u.degree).to_string(sep=":", precision=2)[0]
-                            hdr.set('RA', ra, 'RA in hours')
-                            hdr.set('DEC', dec, 'DEC in degrees')
+                        coo = coord.SkyCoord(ra=query_result['ra'], dec=query_result['dec'])
+                        ra = coo.ra.to(u.hourangle).to_string(sep=":", precision=2)[0]
+                        dec = coo.dec.to(u.degree).to_string(sep=":", precision=2)[0]
+                        hdr.set('RA', ra, 'RA in hours')
+                        hdr.set('DEC', dec, 'DEC in degrees')
                 if 'EPOCH' not in hdr:
                     hdr.set('EPOCH', 2000., 'EPOCH of coordinates')
                 observat = coord.EarthLocation.from_geodetic(obslon, obslat, obsalt * u. m)
