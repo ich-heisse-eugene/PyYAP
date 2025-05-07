@@ -1,4 +1,4 @@
-Pkg_path = "/home/eugene/PyYAP"
+Pkg_path = "path to the current directory"
 
 import time
 from datetime import datetime, date, time
