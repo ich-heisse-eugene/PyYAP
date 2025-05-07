@@ -14,6 +14,7 @@ import matplotlib.pyplot
 
 import os.path
 
+mpl.use('tkagg')
 ##import tkinter as Tk
 matplotlib.pyplot.ion()
 ##################################################################
@@ -213,9 +214,9 @@ def WL_checker(WL, o):
 ####################################################################
 ###1D Moffat fitting/center search
 def center(x_coo, y_coo, bckgrnd):
-    ROI =  copy(spectrum[order, int(x_coo-fit_area):int(x_coo+fit_area)])
-    X=numpy.arange(0, ROI.shape[0])
-    x0 = int(ROI.shape[0]/2)
+    X = np.linspace(int(x_coo)-fit_area, int(x_coo)+fit_area+1, 2*fit_area+1, dtype=int)
+    ROI = spectrum[order, X]
+    x0 = ROI.shape[0]//2
     #moffat fitting
     #A - amplitude, B,C - coeff of function (width ...), D - background
     moffat = lambda x, A, B, C, D, x0: A*(1 + ((x-x0)/B)**2)**(-C)+D
@@ -223,32 +224,26 @@ def center(x_coo, y_coo, bckgrnd):
     try:
         popt, pcov = curve_fit(moffat, X, ROI, p0, maxfev=10000)
     except RuntimeError:
-        return(0)
+        return 0
     return (popt[4]-fit_area)
 
 ####################################################################
 ###search max element in 1d array
 def get_max(x_coo):
-    ROI =  copy(spectrum[order, int(x_coo-FWHM):int(x_coo+FWHM)])
-    Max = numpy.amax(ROI)
-    Min = numpy.amin(ROI)
-    for ii in range (0, ROI.shape[0]):
-        if ROI[ii]==Max:
-            return (x_coo+ii-FWHM, Max, Min)
+    x_range = np.linspace(int(x_coo)-FWHM, int(x_coo)+FWHM+1, 2*FWHM+1, dtype=int)
+    ROI =  spectrum[order, x_range]
+    x_max = int(x_coo)-FWHM+np.argmax(ROI)
+    Max = spectrum[order, x_max]
+    Min = np.min(ROI)
+    return (x_max, Max, Min)
 
 ####################################################################
 ###redraw spectrum
 def draw_spec(spectrum, line):
     graph_data = spectrum[line,:]
     label_data = 'Beam =' + str(line)+ ', '+ 'Order = ' + str(line+OS)+', Status = ' + status
-
     matplotlib.pyplot.cla()
     ax.plot(graph_data, label=label_data, color= 'black', gid='object')
-##    if status=='fit':
-##        ax_w = ax.twiny()
-##        new_tick_locations = np.array([0.0, 500.0, 1000.0, 1500.0, 2000.0])
-##        ax_w.set_xticks(new_tick_locations)
-##        ax_w.set_xticklabels(tick_function(new_tick_locations,line+69))
     ax.set_xlim([0, len(graph_data)])
     matplotlib.pyplot.title(label_data)
     if len(features)!=0:
@@ -265,6 +260,7 @@ def draw_spec(spectrum, line):
                             horizontalalignment='center',\
                             verticalalignment='top',  color='b')
     matplotlib.pyplot.draw()
+    return None
 
 ####################################################################
 ### mark feature
@@ -301,6 +297,7 @@ def mark_feature(x_coo, line):
     except:
         print('error')
         pass
+    return None
 
 ####################################################################
 ### delete feature
@@ -319,6 +316,7 @@ def del_feature(x_coo, line):
     del color[local_index[nearest]]
     draw_spec(spectrum, order)
     matplotlib.pyplot.draw()
+    return None
 
 ####################################################################
 ### search local maximum in current order
@@ -356,6 +354,8 @@ def auto_search(threshold, tolerance):
                                             color='b')
 
     matplotlib.pyplot.draw()
+    return None
+
 ####################################################################
 ### delete feature
 def del_point(x_coo, y_coo):
@@ -392,6 +392,7 @@ def del_point(x_coo, y_coo):
         del color[numpy.argmin(distance)]
 
     matplotlib.pyplot.draw()
+    return None
 
 ####################################################################
 def write_disp(name, data):

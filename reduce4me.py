@@ -1,4 +1,4 @@
-Pkg_path = "/Volumes/DATA0/work/PyYAP/"
+Pkg_path = "/home/eugene/PyYAP"
 
 import time
 from datetime import datetime, date, time
@@ -18,7 +18,7 @@ from list_subtractor import list_subtractor
 from list_dark_subtractor import dark_subtractor
 from thar_combiner import thar_combiner
 from tracer import order_tracer
-from remap_orders import remap_orders
+from remap_orders import remap_orders, rough_shift_eval
 from sl_remover import sl_remover
 from list_cosmo_cleaner import list_cosmo_cleaner
 from extractor import fox
@@ -188,16 +188,35 @@ def S_EX(conf):
     adaptive = eval(conf['adaptive'])
 
     ### Create list of files for averaging to produce the files with distinctive orders
-    if 's_ordim_name' in conf:
-        s_ordim_name = conf['s_ordim_name'].rstrip()
-    else:
-        s_ordim_name = 's_ordim.fits'
     if 's_ordim_method' in conf:      #  Valid methods: 'hybrid', 'flats', 'objects', and 'remap'
         s_ordim_method = conf['s_ordim_method'].rstrip()
     else:
         s_ordim_method = "hybrid"
     print(f"Method: {s_ordim_method}")
-    if s_ordim_method != "remap":
+    remapped = False
+    if s_ordim_method == "remap":
+        print("Using the existing map of orders")
+        logging.info("Using the existing map of orders")
+        dx = conf['dx'] if 'dx' in conf else None
+        dy = conf['dy'] if 'dy' in conf else None
+        dxy = int(conf['dxy']) if 'dxy' in conf else 10
+        with open(thars) as fp:
+            thar_ref = fp.readline().strip('\n')
+        if dx in ('None', "", None) or dy in ('None', "", None):
+            dx, dy = rough_shift_eval(thar_ref, os.path.join(Pkg_path, 'devices', conf['device'], conf['device']+'_thar_ref.fits'))
+        if dx != None and dy != None:
+            print(f"Shift between two setups roughly estimated as dx = {dx} pix and dy = {dy} pix")
+            logging.info(f"Shift between two setups roughly estimated as dx = {dx} pix and dy = {dy} pix")
+            remap_orders(Path2Data, thar_ref, os.path.join(Pkg_path, 'devices', conf['device'], conf['device']+'_reflines.txt'), os.path.join(Pkg_path, 'devices', conf['device'], conf['device']+'_traces.txt'), dx, dy, dxy, view)
+            remapped = True
+        else:
+            print("Automatic algorithm failed to evaluate shift between setups.")
+            logging.info("Automatic algorithm failed to evaluate shift between setups.")
+    if not remapped:
+        if 's_ordim_name' in conf:
+            s_ordim_name = conf['s_ordim_name'].rstrip()
+        else:
+            s_ordim_name = 's_ordim.fits'
         objects_list = []
         if s_ordim_method == "hybrid" or s_ordim_method == "objects":
             with open(os.path.join(Path2Temp, 'obj_CRR_cleaned_list.txt'), 'r') as ff:
@@ -223,15 +242,6 @@ def S_EX(conf):
         print("Start tracing orders")
         order_tracer(Path2Data, s_ordim_name, slice_half_width, step, min_height, aperture, adaptive, view)
         shutil.move(os.fspath(os.path.join(Path2Data, s_ordim_name)), os.fspath(Path2Temp))
-    else:
-        print("Using the existing map of orders")
-        logging.info("Using the existing map of orders")
-        dx = int(conf['dx']) if 'dx' in conf else 0
-        dy = int(conf['dy']) if 'dy' in conf else 0
-        dxy = int(conf['dxy']) if 'dxy' in conf else 10
-        with open(thars) as fp:
-            thar_ref = fp.readline().strip('\n')
-        remap_orders(Path2Data, thar_ref, os.path.join(Pkg_path, 'devices', conf['device'], conf['device']+'_reflines.txt'), os.path.join(Pkg_path, 'devices', conf['device'], conf['device']+'_traces.txt'), dx, dy, dxy, view)
 
     # Remove scattered light
     subtract = eval(conf['subtract'])
@@ -359,8 +369,8 @@ def S_EX(conf):
         yord = int(conf['yord'])
         for line in f:
             name = line.strip()
-            print('Search WL solution for:'+name)
-            logging.info("Search WL solution for: {name}")
+            print(f"Search WL solution for: {name}")
+            logging.info(f"Search WL solution for: {name}")
             thar_auto(Path2Data, name, anr, xord, yord, view)
            ## Save the new WL solution to archive
             dt=datetime.now()
