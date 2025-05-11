@@ -1,14 +1,14 @@
 from astropy.io import fits
 import astropy.time as Time
+from astropy import units as u
 import os
-import numpy
+import numpy as np
 import time
 
 ##################################################################
 def medianer(dir_name, list_name, out_name):
     _data = []
     file_list = []
-    _time = []
     JD1 = []
     JD2 = []
     JD3 = []
@@ -20,48 +20,49 @@ def medianer(dir_name, list_name, out_name):
             _data.append(fits.getdata(name))
             prihdr = fits.getheader(name)
             file_list.append(name.split(os.sep)[-1])
-            try:
-                _time.append(time.mktime(time.strptime(prihdr['DATE-OBS'], "%Y-%m-%dT%H:%M:%S.%f")))
-            except:
-                _time.append(time.mktime(time.strptime(prihdr['DATE-OBS']+'.0', "%Y-%m-%dT%H:%M:%S.%f")))
-            tm = Time.Time(prihdr['DATE-OBS'])
+            tm = Time.Time(prihdr['DATE-OBS'], scale='utc', format='fits')
+            print(line, prihdr['DATE-OBS'], tm)
             JD1.append(tm.jd)
             JD2.append(tm.jd + prihdr['EXPTIME']/2./86400.)
             JD3.append(tm.mjd + prihdr['EXPTIME']/2./86400.)
-    f.close()
 
     ##mean time
-    _time = numpy.mean(_time)
-    mean_time = time.strftime('%Y-%m-%dT%H:%M:%S.000', time.localtime(_time))
-    JD1 = numpy.mean(JD1)
-    JD2 = numpy.mean(JD2)
-    JD3 = numpy.mean(JD3)
+    JD1 = np.mean(JD1)
+    JD2 = np.mean(JD2)
+    JD3 = np.mean(JD3)
+    mean_time = Time.Time(JD2, format='jd').fits
     ##median data
-    _data=numpy.asarray(_data)
-    if str(out_name).find('ordim') != -1:
-        out = numpy.mean(_data, 0)
+    _data = np.asarray(_data)
+    if str(out_name).find('ordim') != -1 or _data.shape[0] % 2 == 0:
+        out = np.mean(_data, 0)
     else:
-        out = numpy.median(_data, 0)
-    out = numpy.float32(out)
+        out = np.median(_data, 0)
+    out = np.float32(out)
 
     if out_name == 's_bias.fits':
         RN = []
         for ii in range(0,_data.shape[0]):
-            xxx = (numpy.std(_data[int(ii), int(_data.shape[1]/2-10):int(_data.shape[1]/2+10), int(_data.shape[2]/2-10):int(_data.shape[2]/2+10)]))
+            area = _data[int(ii), _data.shape[1]//2-10:_data.shape[1]//2+10, _data.shape[2]//2-10:_data.shape[2]//2+10].flatten()
+            for cnt in range(5):
+                area_std = np.std(area)
+                filt = np.where((area >= np.mean(area)-area_std) & (area <= np.mean(area)+area_std))
+                area = area[filt]
+            xxx = np.std(area)
             RN.append(xxx)
-        RN =numpy.asarray(RN)
-        ReadNoise = numpy.median(RN)
+        RN =np.asarray(RN)
+        ReadNoise = np.median(RN)
 
-    mean = numpy.mean(out)
-    median = numpy.median(out)
-    stdv = numpy.std(out)
+    mean = np.mean(out)
+    median = np.median(out)
+    stdv = np.std(out)
 
+    print(f"Mean time of the series: {mean_time}")
     prihdr['DATE-OBS'] = (mean_time, 'mean time of combined files')
     prihdr['JD-OBS']  	= (JD1, 'JD of start of exposure')
     prihdr['JDMIDDLE']	= (JD2, 'JD of middle of exposure')
     prihdr['MJD-OBS'] 	= (JD3, 'MJD of start of exposure')
-    prihdr['DATAMAX'] = (numpy.max(out), 'Max pixel value')
-    prihdr['DATAMIN'] = (numpy.min(out), 'Min pixel value')
+    prihdr['DATAMAX'] = (np.max(out), 'Max pixel value')
+    prihdr['DATAMIN'] = (np.min(out), 'Min pixel value')
     prihdr['DATAMEAN'] = (mean, 'Mean value')
 
     if out_name == 's_bias.fits':

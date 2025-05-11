@@ -4,7 +4,6 @@ from astroquery.simbad import Simbad
 import time
 from astropy.io import fits
 import astropy.time as Time
-import astropy.units as u
 from astropy import coordinates as coord, units as u
 
 def fill_headers(file_names, device):
@@ -13,25 +12,25 @@ def fill_headers(file_names, device):
         obslat = 18.573828      # Latitude of the observatory
         obslon = 98.4817485     # Longitude of the observatory, E
         obsalt = 2549.          # Altitude of the observatory
-        gain = 0.55             # Electronic gain in e-/ADU. Andor Newton
-        rdnoise = 2.0           # CCD readout noise
+        gain = 1.0              # Electronic gain in e-/ADU. Andor Newton
+        rdnoise = 3.0           # CCD readout noise
         if device == 'umres':   # Andor iKon-M
             gain = 1.13         # Electronic gain in e-/ADU
             rdnoise = 3.2       # CCD readout noise
-    elif device == 'eshel_ccs': # Legacy device. Not available anymore
-        obsname = 'CCS'         # NARIT provincial observatory, Chachoengsao
-        obslat = 13.593682      # Latitude of the observatory
-        obslon = 101.256209     # Longitude of the observatory, E
-        obsalt = 11.            # Altitude of the observatory
-        gain = 0.95             # Electronic gain in e-/ADU
-        rdnoise = 7.0           # CCD readout noise
-    elif device == 'eshel_krt': # Legacy device. Not available anymore
-        obsname = 'KRT'         # NARIT provincial observatory, Korat
-        obslat = 14.873460      # Latitude of the observatory
-        obslon = 102.02883      # Longitude of the observatory, E
-        obsalt = 245.           # Altitude of the observatory
-        gain = 0.95             # Electronic gain in e-/ADU
-        rdnoise = 7.0           # CCD readout noise
+    # elif device == 'eshel_ccs': # Legacy device. Not available anymore
+    #     obsname = 'CCS'         # NARIT provincial observatory, Chachoengsao
+    #     obslat = 13.593682      # Latitude of the observatory
+    #     obslon = 101.256209     # Longitude of the observatory, E
+    #     obsalt = 11.            # Altitude of the observatory
+    #     gain = 0.95             # Electronic gain in e-/ADU
+    #     rdnoise = 7.0           # CCD readout noise
+    # elif device == 'eshel_krt': # Legacy device. Not available anymore
+    #     obsname = 'KRT'         # NARIT provincial observatory, Korat
+    #     obslat = 14.873460      # Latitude of the observatory
+    #     obslon = 102.02883      # Longitude of the observatory, E
+    #     obsalt = 245.           # Altitude of the observatory
+    #     gain = 0.95             # Electronic gain in e-/ADU
+    #     rdnoise = 7.0           # CCD readout noise
     elif device == 'eshel_tno':
         obsname = 'TNO'         # Thai National Observatory, Doi Inthanon
         obslat = 18.573828      # Latitude of the observatory
@@ -39,13 +38,13 @@ def fill_headers(file_names, device):
         obsalt = 2549.          # Altitude of the observatory
         gain = 0.95             # Electronic gain in e-/ADU
         rdnoise = 7.0           # CCD readout noise
-    elif device == 'maestro':
-        obsname = 'Terskol'     # Terskol Observatory, Mt. Elbrus, Russia
-        obslat = 43.272777      # Latitude of the observatory
-        obslon = 42.500000      # Longitude of the observatory, E
-        obsalt = 3100.          # Altitude of the observatory
-        gain = 1.0              # Electronic gain in e-/ADU
-        rdnoise = 4.0           # CCD readout noise
+    # elif device == 'maestro':
+    #     obsname = 'Terskol'     # Terskol Observatory, Mt. Elbrus, Russia
+    #     obslat = 43.272777      # Latitude of the observatory
+    #     obslon = 42.500000      # Longitude of the observatory, E
+    #     obsalt = 3100.          # Altitude of the observatory
+    #     gain = 1.0              # Electronic gain in e-/ADU
+    #     rdnoise = 4.0           # CCD readout noise
     elif device == 'eshel_zdnc':
         obsname = 'Zdanice'     # ASA 0.8m telescope, Ždánice
         obslat = 49.06574       # Latitude of the observatory
@@ -92,13 +91,13 @@ def fill_headers(file_names, device):
                 hdr.set('DATE', hdr['DATE-OBS'].split(".")[0], 'Copy of DATE-OBS')
             hdr.set('DISPAXIS', 1, 'Keyword for IRAF')
             if 'GAIN' not in hdr:
-                hdr.set('GAIN', gain, '')
+                hdr.set('GAIN', gain, 1.0)
             if 'RDNOISE' not in hdr:
-                hdr.set('RDNOISE', rdnoise, '')
+                hdr.set('RDNOISE', rdnoise, 1.0)
             hdr.set('OBSGEO-B', obslat, 'Latitude of the observatory')
             hdr.set('OBSGEO-L', obslon, 'Longitude of the observatory')
             hdr.set('OBSGEO-H', obsalt, 'Altitude of the observatory')
-            hdr.set('OBSERVAT', obsname, 'Thai National Observatory')
+            hdr.set('OBSERVAT', obsname, 'Observatory')
 
             if (objnames[ii].lower() == "flat"):
                 hdr.set('IMAGETYP', 'FLAT', '')
@@ -156,7 +155,7 @@ def fill_headers(file_names, device):
             if 'DATE-OBS' in hdr:
                 hdr['DATE-OBS'] = tm_mid.fits
             else:
-                hdr.set('DATE-OBS', tm_mid.fits, '')
+                hdr.set('DATE-OBS', tm_mid.fits, 'Mid-exposure time')
             if 'UT' in hdr:
                 hdr['UT'] = ut
             else:
