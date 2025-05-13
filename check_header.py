@@ -134,9 +134,9 @@ def fill_headers(file_names, device):
                         hdr.set('DEC', dec, 'DEC in degrees')
                 if 'EPOCH' not in hdr:
                     hdr.set('EPOCH', 2000., 'EPOCH of coordinates')
-                # observat = coord.EarthLocation.from_geodetic(obslon, obslat, obsalt * u. m)
-                # dateobs = np.char.replace(tm_mid.fits, 'T', ' ')
-                # dateobs = Time.Time(dateobs, scale='utc', location=observat)
+                observat = coord.EarthLocation.from_geodetic(obslon, obslat, obsalt * u. m)
+                dateobs = np.char.replace(tm_mid.fits, 'T', ' ')
+                dateobs = Time.Time(dateobs, scale='utc', location=observat)
                 # if ra != '' and dec != '':
                 #     star = coord.SkyCoord(ra, dec, unit=(u.hourangle, u.deg), frame='icrs')
                 #     ltt_bary = dateobs.light_travel_time(star)
