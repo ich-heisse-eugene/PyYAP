@@ -4,17 +4,15 @@ import numpy as np
 
 import logging
 
-def thar_manager(obj_name, thar_list):
+def thar_manager(obj_name, thar_list, queue):
 
-    hdulist = fits.open(obj_name)
-    data = hdulist[0].data.copy()
-    prihdr = hdulist[0].header
-    hdulist.close()
-    obs_time = datetime.strptime(prihdr['DATE-OBS'], "%Y-%m-%dT%H:%M:%S.%f") # Normally 'DATE-OBS'
-    exptime = timedelta(seconds = int(prihdr['EXPTIME']))
-    middle_time = obs_time + exptime/2.
+    with fits.open(obj_name) as hdulist:
+        data = hdulist[0].data.copy()
+        prihdr = hdulist[0].header
+    obs_time = datetime.strptime(prihdr['DATE-OBS'], "%Y-%m-%dT%H:%M:%S.%f")
+    middle_time = obs_time
     print(f"File: {obj_name}, Middle: {datetime.strftime(middle_time, '%Y-%m-%d %H:%M:%S')[:-3]}")
-    logging.info(f"File: {obj_name}, Middle: {datetime.strftime(middle_time, '%Y-%m-%d %H:%M:%S')[:-3]}")
+    queue.put((logging.INFO, f"File: {obj_name}, Middle: {datetime.strftime(middle_time, '%Y-%m-%d %H:%M:%S')[:-3]}"))
 
     thar_name = []
     thar_time = []

@@ -107,7 +107,7 @@ def solution(C, Y_Order): #2d chebyshev polynom calculation
     coeff = np.reshape(C,(-1,Y_Order))#7-Yorder
     return lambda X,O:(np.polynomial.chebyshev.chebval2d(X,O,coeff)-shift)/O
 
-def dispers_p(features, X_Order, Y_Order, view):#, fit_params):
+def dispers_p(features, X_Order, Y_Order, view, queue):
     good=True
     while (good):
         local=np.asarray(features)
@@ -131,9 +131,9 @@ def dispers_p(features, X_Order, Y_Order, view):#, fit_params):
     print(f"Lines used: {points}")
     print(f"RMS(Angstrom): {rms:.4f}")
     print(f"RMS(km/s): {round(np.std((residual/W)*c_const),5):.2f}")
-    logging.info(f"Lines used: {points}")
-    logging.info(f"RMS(Angstrom): {rms:.4f}")
-    logging.info(f"RMS(km/s): {round(np.std((residual/W)*c_const),5):.2f}")
+    queue.put((logging.INFO, f"Lines used: {points}"))
+    queue.put((logging.INFO, f"RMS(Angstrom): {rms:.4f}"))
+    queue.put((logging.INFO, f"RMS(km/s): {round(np.std((residual/W)*c_const),5):.2f}"))
 
     if view:
         fig = plt.figure(1, figsize=(16, 5))
@@ -153,7 +153,7 @@ def dispers_p(features, X_Order, Y_Order, view):#, fit_params):
 
 ####################################################################
 ### auto search lines
-def add_lines(spectrum, OS, new_features, thar, disp_params, Y_Order):
+def add_lines(spectrum, OS, new_features, thar, disp_params, Y_Order, queue):
     for ii in range(0, spectrum.shape[0]):
         old_len = len(new_features)
         row = spectrum[ii,:]
@@ -185,7 +185,7 @@ def add_lines(spectrum, OS, new_features, thar, disp_params, Y_Order):
                                 if WL_checker(WL, ii, OS, new_features)==0:
                                     new_features.append([ii+OS, x_coo, WL, y_coo])
         print(f"{len(new_features) - old_len:.0f} features found in order {ii+OS:.0f}")
-        logging.info(f"{len(new_features) - old_len:.0f} features found in order {ii+OS:.0f}")
+        queue.put((logging.INFO, f"{len(new_features) - old_len:.0f} features found in order {ii+OS:.0f}"))
 
     return (new_features)
 
@@ -238,10 +238,10 @@ def reidentify_features(s_order, OS, zero_features, line, shift, new_features):
     return(new_features)
 
 ######################################################################
-def first_ident(spectrum, zero, zero_features, OS):
+def first_ident(spectrum, zero, zero_features, OS, queue):
     shift = search_shift(spectrum, zero)  #get shift
     print(f"Average shift betweet ThAr epochs is {shift:.2f} pix")
-    logging.info(f"Average shift betweet ThAr epochs is {shift:.2f} pix")
+    queue.put((logging.INFO, f"Average shift betweet ThAr epochs is {shift:.2f} pix"))
     new_features=[]
     #for each order
     found=0
@@ -252,12 +252,12 @@ def first_ident(spectrum, zero, zero_features, OS):
         z_order = z_order / np.max(z_order)
         new_features = reidentify_features(s_order, OS, zero_features, ii, shift, new_features)
         print(f"{len(new_features) - found:.0f} features identified in order {ii+OS:.0f}")
-        logging.info(f"{len(new_features) - found:.0f} features identified in order {ii+OS:.0f}")
+        queue.put((logging.INFO, f"{len(new_features) - found:.0f} features identified in order {ii+OS:.0f}"))
         found = len(new_features)
     return new_features
 
 ####################################################################
-def thar_auto(dir_name, file_name, OS, X_Order, Y_Order, view):
+def thar_auto(dir_name, file_name, OS, X_Order, Y_Order, view, queue):
     #params
     global old_thar
     old_thar = 'thar_last.fits'         #name of last thar with good dispersion function
@@ -283,7 +283,7 @@ def thar_auto(dir_name, file_name, OS, X_Order, Y_Order, view):
 
     #open file with new thar
     print(file_name)
-    logging.info(file_name)
+    queue.put((logging.INFO, file_name))
     with fits.open(file_name) as hdulist:
         prihdr = hdulist[0].header
         spectrum = hdulist[0].data.copy()
@@ -300,23 +300,23 @@ def thar_auto(dir_name, file_name, OS, X_Order, Y_Order, view):
     #read short file with features
     if  os.path.exists(old_thar_features):
         print('File ', old_thar_features, ' found')
-        logging.info(f"File {old_thar_features} found")
+        queue.put((logging.INFO, f"File {old_thar_features} found"))
         with open(old_thar_features, 'r') as f:
             for line in f:
                 one_str = line.rsplit('\t')
                 zero_features.append([float(one_str[0]),float(one_str[1]), float(one_str[2]), float(one_str[3])])
         f.close()
-        print(len(zero_features), "features read for auto identification")
-        logging.info(f"{len(zero_features)} features read for auto identification")
+        print(f"{len(zero_features)} features read for auto identification")
+        queue.put((logging.INFO, f"{len(zero_features)} features read for auto identification"))
     else:
-        print('File ', old_thar_features, ' not found')
-        logging.error(f"File {old_thar_features} not found")
+        print(f"File {old_thar_features} not found")
+        queue.put((logging.INFO, f"File {old_thar_features} not found"))
         return None
 
     # Read full list of ThAr lines
     if  os.path.exists(line_list):
-        print('File ', line_list, ' found')
-        logging.info(f"File {line_list} found")
+        print(f"File {line_list} found")
+        queue.put((logging.INFO, f"File {line_list} found"))
         with open(line_list, 'r') as f:
             for line in f:
                 try:
@@ -325,24 +325,24 @@ def thar_auto(dir_name, file_name, OS, X_Order, Y_Order, view):
                     pass
         f.close()
         print(f"{len(thar)} features in line list")
-        logging.info(f"{len(thar)} features in line list")
+        queue.put((logging.INFO, f"{len(thar)} features in line list"))
 
     else:
         print('File ', line_list, ' not found')
-        logging.info(f"File {line_list} not found")
+        queue.put((logging.INFO, f"File {line_list} not found"))
 
     # identifying and centering features from a short list
-    new_features = first_ident(spectrum, zero, zero_features, OS)
+    new_features = first_ident(spectrum, zero, zero_features, OS, queue)
     # write a new short list with identifications
     write_new_short(spectrum, new_features, prihdr, dir_name)
     print('New short list saved')
-    logging.info('New short list saved')
+    queue.put((logging.INFO, 'New short list saved'))
     # search for the first solution based on the short list
-    disp_params, new_features, points, rms = dispers_p(new_features, X_Order, Y_Order, view)
+    disp_params, new_features, points, rms = dispers_p(new_features, X_Order, Y_Order, view, queue)
     # add new lines
-    new_features = add_lines(spectrum, OS, new_features, thar, disp_params, Y_Order)
+    new_features = add_lines(spectrum, OS, new_features, thar, disp_params, Y_Order, queue)
     # now search for the second solution based on the long list
-    disp_params, new_features, points, rms = dispers_p(new_features, X_Order, Y_Order, view)
+    disp_params, new_features, points, rms = dispers_p(new_features, X_Order, Y_Order, view, queue)
     # save the results
     write_disp(file_name, disp_params, OS, X_Order, Y_Order, prihdr)
     hdulist[0].data = spectrum
@@ -371,3 +371,12 @@ def thar_auto(dir_name, file_name, OS, X_Order, Y_Order, view):
         plt.show()
 
     return None
+
+
+######################
+# dir_name = "./"
+# file_name = "s_thar_0_ec.fits"
+# OS = 36
+# X_Order = 5; Y_Order = 5
+# view = True
+# thar_auto(dir_name, file_name, OS, X_Order, Y_Order, view)

@@ -4,7 +4,7 @@ import shutil
 import logging
 
 ##################################################################
-def lister(data_dir, raw_dir, temp_dir):
+def lister(data_dir, raw_dir, temp_dir, queue):
     file_list = []
     darks = False
     dir_content = os.listdir(data_dir)
@@ -77,7 +77,7 @@ def lister(data_dir, raw_dir, temp_dir):
                 hdulist.close()
             except IOError:
                 print("Can't open file: ", file_list[ii])
-                logging.error("Can't open file: {file_list[ii]}")
+                queue.put((logging.INFO, "Err: Can't open file: {file_list[ii]}"))
                 pass
         bf.close()
         df.close()
@@ -87,12 +87,13 @@ def lister(data_dir, raw_dir, temp_dir):
         if not darks:
             os.remove(os.path.join(temp_dir, 'dark_list.txt'))
         if counter==0:
-            logging.info('OK')
+            queue.put((logging.INFO, "OK"))
             return ('OK')
         else:
-            print('Some files are wrong')
-            logging.warning('Some files are wrong')
+            print('Something is wrong with files')
+            queue.put((logging.INFO, "Err: Something is wrong with files"))
             return(None)
     else:
         print('Directory is empty')
+        queue.put((logging.INFO, "Err: Directory is empty"))
         return(None)

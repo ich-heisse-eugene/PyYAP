@@ -3,7 +3,7 @@ import numpy as np
 import logging
 from get_sp_resolv import read_multispec
 
-def update_snr(input_file):
+def update_snr(input_file, queue):
     file_err = input_file.replace('_ec_', '_err_')
     wl, err = read_multispec(file_err)
     norders = np.shape(wl)[0]
@@ -36,7 +36,7 @@ def update_snr(input_file):
                 snr0 = np.mean(err[i, x-10:x+10])
                 if np.isnan(snr0):
                     print(f"NaN values of SNR in a file {input_file}")
-                    logging.warning(f"NaN values of SNR in a file {input_file}")
+                    queue.put((logging.INFO, f"NaN values of SNR in a file {input_file}"))
                     key_v = key_v + 'NaN'+' '
                 else:
                     key_v = key_v + str(int(snr0))+' '
@@ -50,4 +50,3 @@ def update_snr(input_file):
         hdulist.close()
     return None
 
-# update_snr(argv[1])

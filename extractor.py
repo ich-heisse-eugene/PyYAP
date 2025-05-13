@@ -3,7 +3,7 @@ import os
 import numpy as np
 import scipy.interpolate
 import shutil
-
+import multiprocessing as mp
 import logging
 
 import matplotlib
@@ -40,46 +40,34 @@ def read_traces(x_coo, ap_file):
                 poly_trace_coef = np.asarray(p[3:3+poly_order+1], dtype=float)
                 Y.append(np.polyval(poly_trace_coef, x_coo))
                 FWHM.append(np.repeat(float(p[3+poly_order+1]), len(x_coo)))
-        print(f"{n_orders} orders read from file")
     return np.asarray(Y), np.asarray(FWHM)
 
-def fox(file_name, sflat_image, ap_file, ex_type, aperture):
-
-    print(f"Extraction spectra from {file_name} started")
-    logging.info(f"Extraction spectra from {file_name} started")
-
-    #read file with super flat
-    hdulist = fits.open(sflat_image)
-    s_flat_data = hdulist[0].data.copy()
-    prihdr = hdulist[0].header
-    if 'RDNOISE' in prihdr:
-        RN = prihdr['RDNOISE']
-        print("Read noise = ", RN)
-        logging.info(f"Read noise = {RN:.1f}")
-    else:
-        print("Read noise not found in", sflat_image, " header.")
-        logging.warning(f"Read noise not found in {sflat_image} header.")
-        return (None)
-    if 'GAIN' in prihdr:
-        gain = prihdr['GAIN']
-        print("Gain = ", gain)
-        logging.info(f"Gain = {gain:.1f}")
-    else:
-        print("Gain not found in", sflat_image, " header.")
-        logging.warning(f"Gain not found in {sflat_image} header.")
-        return (None)
-    hdulist.close()
+def fox(file_name, sflat_image, ap_file, ex_type, aperture, queue):
+    with fits.open(sflat_image) as hdulist:
+        s_flat_data = hdulist[0].data.copy()
+        prihdr = hdulist[0].header
+        if 'RDNOISE' in prihdr:
+            RN = prihdr['RDNOISE']
+        else:
+            RN = -999
+            return None
+        if 'GAIN' in prihdr:
+            gain = prihdr['GAIN']
+        else:
+            gain = -999
+            return None
 
     #read file with spectra
-    hdulist = fits.open(file_name)
-    spectra_data = hdulist[0].data.copy()
-    prihdr = hdulist[0].header
-    hdulist.close()
+    with fits.open(file_name) as hdulist:
+        spectra_data = hdulist[0].data.copy()
+        prihdr = hdulist[0].header
 
     if s_flat_data.shape[0]!=spectra_data.shape[0] or s_flat_data.shape[1]!=spectra_data.shape[1]:
         return (None)
 
     orders, width = read_traces(np.arange(s_flat_data.shape[1]), ap_file)
+    print(f"Extraction of {len(orders)} spectral orders from {file_name} started. Gain = {gain:.1f}\tReadout noise = {RN:.2f}")
+    queue.put((logging.INFO, f"Extraction of {len(orders)} spectral orders from {file_name} started. Gain = {gain:.1f}\tReadout noise = {RN:.2f}"))
 
     s_flat_data = np.clip(s_flat_data, 0, 65000)
     spectra_data = np.clip(spectra_data, 0, 65000)
@@ -87,8 +75,8 @@ def fox(file_name, sflat_image, ap_file, ex_type, aperture):
     #flat-relative optimal extraction
     if ex_type=='FOX':
         sq_RN = np.zeros_like(s_flat_data)
-        sq_RN.fill((RN/gain)**2)##################################
-        sq_RN = sq_RN + spectra_data    #
+        sq_RN.fill((RN/gain)**2)
+        sq_RN = sq_RN + spectra_data
         weight = np.ones_like(s_flat_data)
         weight = np.divide(weight, sq_RN)
         #multiply arays
@@ -189,7 +177,6 @@ def fox(file_name, sflat_image, ap_file, ex_type, aperture):
     s_ex=np.float32(s_ex)
     s_ex = np.fliplr(s_ex)
 
-
     hdu = fits.PrimaryHDU(s_ex)
     hdu.header = prihdr
     hdu.header['HISTORY'] = 'extracted by '+ex_type
@@ -221,5 +208,41 @@ def fox(file_name, sflat_image, ap_file, ex_type, aperture):
     hdu.header['IMAGETYP'] = 'S/N map'
     err_file = os.path.splitext(file_name)[0] + '_err.fits'
     hdu.writeto(err_file, overwrite=True)
+    return (new_file, err_file)
 
-    return(new_file, err_file)
+def extract_multi(Path2Data, Path2Temp, list_name, out_list_name, out_err_list_name, conf, flat_name, queue):
+    ap_file = os.path.join(Path2Temp, 'traces.txt')
+    aperture = float(conf['aperture'])
+    ex_type = conf['ex_type']
+    view = eval(conf['view'])
+    out_list = []
+    with open(list_name, 'r') as f:
+        proc_args = [(Path2Temp, line.strip(), flat_name, ap_file, ex_type, aperture, queue) for line in f]
+        nCPUs = os.cpu_count()
+        if 'threading' in conf and eval(conf['threading']) and nCPUs > 2:
+            with mp.Pool(processes=nCPUs) as pool:
+                res_async = pool.starmap_async(process_multi, proc_args, chunksize=nCPUs)
+                res_async.wait()
+                out_list.extend(res_async.get())
+        else:
+            for item in proc_args:
+                res_mono = process_multi(Path2Temp, item[1], flat_name, ap_file, ex_type, aperture, queue)
+                out_list.extend([res_mono])
+    f_out = open(out_list_name, 'a')
+    fe_out = open(out_err_list_name, 'a')
+    for item in out_list:
+        print(item[0], file=f_out)
+        print(item[1], file=fe_out)
+    f_out.close()
+    fe_out.close()
+    os.remove(list_name)
+    print("Extraction complete")
+    queue.put((logging.INFO, "Extraction complete"))
+    return None
+
+def process_multi(Path2Temp, name, flat_name, ap_file, ex_type, aperture, queue):
+    status, status_err = fox(name, flat_name, ap_file, ex_type, aperture, queue)
+    print(f"Extracted spectrum saved in {status}")
+    queue.put((logging.INFO, f"Extracted spectrum saved in {status}"))
+    shutil.move(os.fspath(name), os.fspath(Path2Temp))
+    return [status, status_err]

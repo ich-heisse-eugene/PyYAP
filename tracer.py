@@ -1,4 +1,5 @@
 import os
+import shutil
 
 from astropy.io import fits
 import numpy as np
@@ -11,6 +12,8 @@ from scipy.signal import find_peaks
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+
+from medianer import medianer
 
 from sklearn.cluster import AgglomerativeClustering
 mpl.rcParams['text.usetex'] = False
@@ -53,7 +56,7 @@ def plot_traces(dir_name, ordim, x_coord, orders, width_tab, aperture, view):
     return None
 
 
-def order_tracer(dir_name, file_name, X_half_width, step, min_height, aperture, adaptive, view):
+def order_tracer(dir_name, file_name, X_half_width, step, min_height, aperture, adaptive, view, queue):
     poly_order = 2 # order of polynomial fit
 
     #read image
@@ -100,7 +103,7 @@ def order_tracer(dir_name, file_name, X_half_width, step, min_height, aperture, 
     order_tab[:, 0] = np.arange(len(order_tab[:, 0]), dtype=int) # insert the number of order in the 0th column
     n_orders = int(order_tab[-1, 0]) + 1
     print(f"{n_orders} orders have been detected")
-    logging.info(f"{n_orders} orders have been detected")
+    queue.put((logging.INFO, f"{n_orders} orders have been detected"))
 
     # Recentering orders and the final tracing
     # get points for order tracing, start from center column of image
@@ -108,13 +111,13 @@ def order_tracer(dir_name, file_name, X_half_width, step, min_height, aperture, 
     trace_x = np.arange(step, ordim.shape[1]-step+1, step, dtype=int)
     n_trace_x = len(trace_x)
     print(f"Each order has {n_trace_x} points for fitting")
-    logging.info(f"Each order has {n_trace_x} points for fitting")
+    queue.put((logging.INFO, f"Each order has {n_trace_x} points for fitting"))
     x_coord = np.arange(ordim.shape[1])
     orders = []
 
     for i in range(n_orders):
         print(f"Re-trace order #{i}")
-        logging.info(f"Re-trace order #{i}")
+        queue.put((logging.INFO, f"Re-trace order #{i}"))
         xfit = []
         centr = []
         width = []
@@ -149,7 +152,7 @@ def order_tracer(dir_name, file_name, X_half_width, step, min_height, aperture, 
         # plt.show()
 
         print(f"{len(xfit)} points were fitted, median FWHM is {med_fwhm:.2f} pix")
-        logging.info(f"{len(xfit)} points were fitted, median FWHM is {med_fwhm:.2f} pix")
+        queue.put((logging.INFO, f"{len(xfit)} points were fitted, median FWHM is {med_fwhm:.2f} pix"))
         if len(xfit) > 0:
             coef_center = np.polyfit(xfit, centr, poly_order)
             coef_width = np.polyfit(xfit, width, poly_order)
@@ -160,7 +163,7 @@ def order_tracer(dir_name, file_name, X_half_width, step, min_height, aperture, 
                 width = np.repeat(med_fwhm, ordim.shape[1])
             if np.min(np.polyval(coef_center, x_coord) - width) < 0. or np.max(np.polyval(coef_center, x_coord) + width) >= ordim.shape[0]-1 or len(xfit) < 0.66*n_trace_x:
                 print(f"Skip incomplete order #{i}")
-                logging.info(f"Skip incomplete order #{i}")
+                queue.put((logging.INFO, f"Skip incomplete order #{i}"))
             else:
                 width_tab.append(width)
                 orders.append(coef_center)
@@ -170,7 +173,7 @@ def order_tracer(dir_name, file_name, X_half_width, step, min_height, aperture, 
                     width_coef_tab.append(med_fwhm)
         else:
             print(f"Skip incomplete order #{i}")
-            logging.info(f"Skip incomplete order #{i}")
+            queue.put((logging.INFO, f"Skip incomplete order #{i}"))
 
     width_tab = np.asarray(width_tab)
     orders = np.asarray(orders)
@@ -180,23 +183,49 @@ def order_tracer(dir_name, file_name, X_half_width, step, min_height, aperture, 
     ##
     if status:
         print(f"The results have been saved to {os.path.join(dir_name, 'temp', 'traces.txt')}")
-        logging.info(f"The results have been saved to {os.path.join(dir_name, 'temp', 'traces.txt')}")
+        queue.put((logging.INFO, f"The results have been saved to {os.path.join(dir_name, 'temp', 'traces.txt')}"))
     else:
         print(f"The results could not be saved to {os.path.join(dir_name, 'temp', 'traces.txt')}")
-        logging.info(f"The results could not be saved to {os.path.join(dir_name, 'temp', 'traces.txt')}")
+        queue.put((logging.INFO, f"The results could not be saved to {os.path.join(dir_name, 'temp', 'traces.txt')}"))
 
     # Display the results
     plot_traces(dir_name, ordim, x_coord, orders, width_tab, aperture, view)
-
     return None
-#
-# dir_name = os.path.realpath("/home/eugene/work/reduction/MRES/20191217")
-# file_name = "s_ordim.fits"
-# X_half_width = 3.5
-# step = 5
-# min_height = 0.5
-# aperture = 1.1
-# adaptive = False
-# view = True
-#
-# order_tracer(dir_name, file_name, X_half_width, step, min_height, aperture, adaptive, view)
+
+def locate_orders(Path2Data, Path2Temp, conf, s_ordim_method, queue):
+    slice_half_width = float(conf['slice_half_width'])
+    step = int(conf['step'])
+    min_height = float(conf['min_height'])
+    aperture = float(conf['aperture'])
+    view = eval(conf['view'])
+    adaptive = eval(conf['adaptive'])
+    s_flat_name = conf['s_flat_name']
+    if 's_ordim_name' in conf:
+        s_ordim_name = conf['s_ordim_name'].rstrip()
+    else:
+        s_ordim_name = 's_ordim.fits'
+    objects_list = []
+    if s_ordim_method == "hybrid" or s_ordim_method == "objects":
+        with open(os.path.join(Path2Temp, 'obj_CRR_cleaned_list.txt'), 'r') as ff:
+            objects_list = ff.read().splitlines()
+            ff.close()
+        if s_ordim_method == "hybrid":
+            objects_list.append(os.path.join(Path2Data, s_flat_name))
+        with open(os.path.join(Path2Temp, 'ordim_list.txt'), 'w+') as f:
+            print(*objects_list, sep='\n', file=f)
+            f.close()
+        sordim_data = medianer(Path2Data, os.path.join(Path2Temp, 'ordim_list.txt'), os.path.join(Path2Data, s_ordim_name))
+    if s_ordim_method == 'flats':
+        shutil.copy2(os.path.join(Path2Data, s_flat_name), os.path.join(Path2Data, s_ordim_name))
+    if os.path.isfile(os.path.join(Path2Data, s_ordim_name)):
+        print(f"Master image {s_ordim_name} for the tracer was created using the method '{s_ordim_method}'")
+        queue.put((logging.INFO, f"Master image {s_ordim_name} for the tracer was created using the method '{s_ordim_method}'"))
+    else:
+        print(f"Error: Failed to create a file {s_ordim_name} for the tracing using the method '{s_ordim_method}'")
+        queue.put((logging.INFO, f"Error: Failed to create a file {s_ordim_name} for the tracing using the method '{s_ordim_method}'"))
+        return False
+    ## Trace orders from scratch using cluster analysis
+    print("Start tracing orders")
+    order_tracer(Path2Data, s_ordim_name, slice_half_width, step, min_height, aperture, adaptive, view, queue)
+    shutil.move(os.fspath(os.path.join(Path2Data, s_ordim_name)), os.fspath(Path2Temp))
+    return True

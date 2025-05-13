@@ -17,6 +17,21 @@ def fill_headers(file_names, device):
         if device == 'umres':   # Andor iKon-M
             gain = 1.13         # Electronic gain in e-/ADU
             rdnoise = 3.2       # CCD readout noise
+    elif device == 'eshel_tno':
+        obsname = 'TNO'         # Thai National Observatory, Doi Inthanon
+        obslat = 18.573828      # Latitude of the observatory
+        obslon = 98.4817485     # Longitude of the observatory, E
+        obsalt = 2549.          # Altitude of the observatory
+        gain = 0.95             # Electronic gain in e-/ADU
+        rdnoise = 7.0           # CCD readout noise
+    elif device == 'eshel_zdnc':
+        obsname = 'Zdanice'     # ASA 0.8m telescope, Ždánice
+        obslat = 49.06574       # Latitude of the observatory
+        obslon = 17.03784       # Longitude of the observatory, E
+        obsalt = 250            # Altitude of the observatory
+        gain = 1                # Electronic gain in e-/ADU
+        rdnoise = 1             # CCD readout noise
+    ######## LEGACY instruments ############
     # elif device == 'eshel_ccs': # Legacy device. Not available anymore
     #     obsname = 'CCS'         # NARIT provincial observatory, Chachoengsao
     #     obslat = 13.593682      # Latitude of the observatory
@@ -31,13 +46,6 @@ def fill_headers(file_names, device):
     #     obsalt = 245.           # Altitude of the observatory
     #     gain = 0.95             # Electronic gain in e-/ADU
     #     rdnoise = 7.0           # CCD readout noise
-    elif device == 'eshel_tno':
-        obsname = 'TNO'         # Thai National Observatory, Doi Inthanon
-        obslat = 18.573828      # Latitude of the observatory
-        obslon = 98.4817485     # Longitude of the observatory, E
-        obsalt = 2549.          # Altitude of the observatory
-        gain = 0.95             # Electronic gain in e-/ADU
-        rdnoise = 7.0           # CCD readout noise
     # elif device == 'maestro':
     #     obsname = 'Terskol'     # Terskol Observatory, Mt. Elbrus, Russia
     #     obslat = 43.272777      # Latitude of the observatory
@@ -45,13 +53,6 @@ def fill_headers(file_names, device):
     #     obsalt = 3100.          # Altitude of the observatory
     #     gain = 1.0              # Electronic gain in e-/ADU
     #     rdnoise = 4.0           # CCD readout noise
-    elif device == 'eshel_zdnc':
-        obsname = 'Zdanice'     # ASA 0.8m telescope, Ždánice
-        obslat = 49.06574       # Latitude of the observatory
-        obslon = 17.03784       # Longitude of the observatory, E
-        obsalt = 250            # Altitude of the observatory
-        gain = 1                # Electronic gain in e-/ADU
-        rdnoise = 1             # CCD readout noise
 
     files, objnames = np.loadtxt(file_names, unpack=True, usecols=(0,1), dtype=str, delimiter=';')
     for ii in range(len(files)):
@@ -133,18 +134,18 @@ def fill_headers(file_names, device):
                         hdr.set('DEC', dec, 'DEC in degrees')
                 if 'EPOCH' not in hdr:
                     hdr.set('EPOCH', 2000., 'EPOCH of coordinates')
-                observat = coord.EarthLocation.from_geodetic(obslon, obslat, obsalt * u. m)
-                dateobs = np.char.replace(tm_mid.fits, 'T', ' ')
-                dateobs = Time.Time(dateobs, scale='utc', location=observat)
-                if ra != '' and dec != '':
-                    star = coord.SkyCoord(ra, dec, unit=(u.hourangle, u.deg), frame='icrs')
-                    ltt_bary = dateobs.light_travel_time(star)
-                    bjd = dateobs.jd + ltt_bary.value
-                    bcr = star.radial_velocity_correction(obstime=dateobs)
-                    hdr.set('BJD', bjd, 'Barycentric JD')
-                    hdr.set('BARYCORR', bcr.to(u.km/u.s).value, 'Barycentric correction')
-                else:
-                    hdr.set('JD', dateobs.jd, 'Julian Date')
+                # observat = coord.EarthLocation.from_geodetic(obslon, obslat, obsalt * u. m)
+                # dateobs = np.char.replace(tm_mid.fits, 'T', ' ')
+                # dateobs = Time.Time(dateobs, scale='utc', location=observat)
+                # if ra != '' and dec != '':
+                #     star = coord.SkyCoord(ra, dec, unit=(u.hourangle, u.deg), frame='icrs')
+                #     ltt_bary = dateobs.light_travel_time(star)
+                #     bjd = dateobs.jd + ltt_bary.value
+                #     bcr = star.radial_velocity_correction(obstime=dateobs)
+                #     hdr.set('BJD', bjd, 'Barycentric JD')
+                #     hdr.set('BARYCORR', bcr.to(u.km/u.s).value, 'Barycentric correction')
+                # else:
+                hdr.set('JD', dateobs.jd, 'Julian Date')
                 hdr.set('IMAGETYP', 'OBJ', '')
             if 'OBJNAME' not in hdr and 'OBJECT' not in hdr:
                 hdr['OBJNAME'] = objnames[ii]

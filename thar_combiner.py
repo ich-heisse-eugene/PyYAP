@@ -5,7 +5,7 @@ from medianer import medianer
 import os
 import logging
 
-def thar_combiner(dir_name, thar_list):
+def thar_combiner(dir_name, thar_list, queue):
     thar_name = []
     thar_time = []
 
@@ -14,7 +14,6 @@ def thar_combiner(dir_name, thar_list):
             name = line.strip()
             prihdr = fits.getheader(name)
             thar_name.append(name.split(os.sep)[-1])
-            print(prihdr['DATE-OBS'])
             thar_time.append(time.mktime(time.strptime(prihdr['DATE-OBS'][:prihdr['DATE-OBS'].find('.')], "%Y-%m-%dT%H:%M:%S")))#.%f
     f.close()
     print()
@@ -39,12 +38,11 @@ def thar_combiner(dir_name, thar_list):
         local = thar_all[ii]
         for jj in range(0, len(local)):
             print(os.path.join(dir_name, local[jj]), file=temp_list)
-            print (local[jj])
         temp_list.close()
         medianer(dir_name, os.path.join(dir_name, 'temp.txt'), 's_thar_'+str(ii)+'.fits')
         print(os.path.join(dir_name, 's_thar_'+str(ii)+'.fits'), file=tf)
         print(f"s_thar_{str(ii)}.fits created")
-        logging.info(f"s_thar_{str(ii)}.fits created")
+        queue.put((logging.INFO, f"s_thar_{str(ii)}.fits created"))
         print()
     tf.close()
 

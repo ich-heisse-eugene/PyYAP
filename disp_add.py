@@ -13,24 +13,22 @@ from scipy.interpolate import interp1d
 
 c = 299792.458 # km/s
 
-def cheb_sol(C, y_order): #2d chebyshev polynomial calculation
+def cheb_sol(C, y_order):
     shift = C[0]
     C = np.delete(C,0)
     coeff = np.reshape(C,(-1,y_order))#7-Yorder
     return lambda X,O:(np.polynomial.chebyshev.chebval2d(X,O,coeff)-shift)/O
 
-def disp_add(fits_name, thar_name, view):
+def disp_add(fits_name, thar_name, view, queue):
     bcr = -999
 
     if view:
         disp = matplotlib.pyplot.figure(1)
         ax = matplotlib.pyplot.gca()
 
-    #read fits
-    hdulist = fits.open(fits_name)
-    spectrum = hdulist[0].data.copy()
-    prihdr = hdulist[0].header
-    hdulist.close()
+    with fits.open(fits_name) as hdulist:
+        spectrum = hdulist[0].data.copy()
+        prihdr = hdulist[0].header
 
     if 'IMAGETYP' in prihdr:
         if prihdr['IMAGETYP'] == 'OBJ':
@@ -39,7 +37,7 @@ def disp_add(fits_name, thar_name, view):
                 if 'OBSGEO-B' in prihdr and 'OBSGEO-L' in prihdr and 'OBSGEO-H' in prihdr \
                               and 'RA' in prihdr and 'DEC' in prihdr and 'EPOCH' in prihdr:
                     print("Compute barycentric correction...")
-                    logging.info("Compute barycentric correction...")
+                    queue.put((logging.INFO, "Compute barycentric correction..."))
                     dateobs = prihdr['DATE-OBS']
                     ra = prihdr['RA']
                     dec = prihdr['DEC']
@@ -56,15 +54,21 @@ def disp_add(fits_name, thar_name, view):
                     bcr = star.radial_velocity_correction(obstime=dateobs)
                     prihdr.set('BJD', bjd, 'Barycentric JD')
                     prihdr.set('BARYCORR', bcr.to(u.km/u.s).value, 'Barycentric correction')
+                    print(f"Object with RA={ra}, DEC={dec}, J{epoch}")
+                    print(f"Observatory at lat={obslat}, lon={obslon}, alt={obsalt}")
+                    print(f"BJD={bjd:.5f}, BCRV={bcr.to(u.km/u.s).value:.3f} km/s")
+                    queue.put((logging.INFO, f"Object with RA={ra}, DEC={dec}, J{epoch}"))
+                    queue.put((logging.INFO, f"Observatory at lat={obslat}, lon={obslon}, alt={obsalt}"))
+                    queue.put((logging.INFO, f"BJD={bjd:.5f}, BCRV={bcr.to(u.km/u.s).value:.3f} km/s"))
                 else:
                     print("No information about the observatory in the header. Wavelength remains uncorrected")
-                    logging.warning("No information about the observatory in the header. Wavelength remains uncorrected")
+                    queue.put((logging.INFO, "No information about the observatory in the header. Wavelength remains uncorrected"))
             else:
                 bcr = prihdr['BARYCORR']
 
     #read solution
     sol_name = os.path.splitext(thar_name)[0] + '_disp.txt'
-    print('Disp solution:', sol_name)
+    print('Disp. solution:', sol_name)
     solution = np.genfromtxt(sol_name)
     order_shift = int(solution[0])
     x_order = int(solution[1])
@@ -85,7 +89,7 @@ def disp_add(fits_name, thar_name, view):
         w2=np.max(WL)
         nw=len(X)
         dw=(w2-w1)/(nw-1) #-1
-##        print ('Blue end:', w1, 'Red end:', w2, 'A/pix:', dw)
+
         X_lin=np.linspace(w1,w2, nw)
         graph_data = spectrum[ii,:]
         f2 = interp1d(WL, graph_data, kind='slinear', bounds_error = False)

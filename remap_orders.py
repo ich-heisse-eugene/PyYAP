@@ -154,7 +154,7 @@ def rough_shift_eval(file_arc_spec, file_arc_ref):
     y0 = ymax - 2*subar - 1
     return -x0, -y0
 
-def remap_orders(dir_name, file_arc_spec, file_reflines, file_ap, dx, dy, dxy, view): # x_ref, y_ref,
+def remap_orders(dir_name, file_arc_spec, file_reflines, file_ap, dx, dy, dxy, view, queue): # x_ref, y_ref,
     err = 1
     try:
         print(file_arc_spec)
@@ -190,9 +190,30 @@ def remap_orders(dir_name, file_arc_spec, file_reflines, file_ap, dx, dy, dxy, v
         ##
         if status:
             print(f"The results have been saved to {os.path.join(dir_name, 'temp', 'traces.txt')}")
-            logging.info(f"The results have been saved to {os.path.join(dir_name, 'temp', 'traces.txt')}")
+            queue.put((logging.INFO, f"The results have been saved to {os.path.join(dir_name, 'temp', 'traces.txt')}"))
         else:
             print(f"The results could not be saved to {os.path.join(dir_name, 'temp', 'traces.txt')}")
-            logging.info(f"The results could not be saved to {os.path.join(dir_name, 'temp', 'traces.txt')}")
+            queue.put((logging.INFO, f"The results could not be saved to {os.path.join(dir_name, 'temp', 'traces.txt')}"))
         plot_traces(dir_name, img, x_coord, coef_centr, fwhm_old_coef, aperture, view)
     return None
+
+def remap_existing(Path2Data, Pkg_path, thars, conf, queue):
+    view = eval(conf['view'])
+    print("Using the existing map of orders")
+    queue.put((logging.INFO, "Using the existing map of orders"))
+    dx = conf['dx'] if 'dx' in conf else None
+    dy = conf['dy'] if 'dy' in conf else None
+    dxy = int(conf['dxy']) if 'dxy' in conf else 10
+    with open(thars) as fp:
+        thar_ref = fp.readline().strip('\n')
+    if dx in ('None', "", None) or dy in ('None', "", None):
+        dx, dy = rough_shift_eval(thar_ref, os.path.join(Pkg_path, 'devices', conf['device'], conf['device']+'_thar_ref.fits'))
+    if dx != None and dy != None:
+        print(f"Shift between two setups roughly estimated as dx = {dx} pix and dy = {dy} pix")
+        queue.put((logging.INFO, f"Shift between two setups roughly estimated as dx = {dx} pix and dy = {dy} pix"))
+        remap_orders(Path2Data, thar_ref, os.path.join(Pkg_path, 'devices', conf['device'], conf['device']+'_reflines.txt'), os.path.join(Pkg_path, 'devices', conf['device'], conf['device']+'_traces.txt'), dx, dy, dxy, view, queue)
+        return True
+    else:
+        print("Automatic algorithm failed to evaluate shift between setups.")
+        queue.put((logging.INFO, "Automatic algorithm failed to evaluate shift between setups."))
+    return False

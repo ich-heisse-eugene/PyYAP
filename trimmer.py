@@ -35,8 +35,9 @@ def trimmer(dir_name, list_name, area, flip):
                         print(f"ERROR: Can't write file {name}")
                 else:
                     print (f"Frame {name} has wrong size")
-
+                    return("not trimmed")
             except IOError:
                 print (f"Can't open file: {name}")
+                return("not trimmed")
     f.close()
-    return("Trimmed")
+    return("trimmed")

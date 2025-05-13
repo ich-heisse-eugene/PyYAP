@@ -31,22 +31,22 @@ def process_block(Path2Data, Path2Temp, list_names, dark_time_exp):
             np.savetxt(os.path.join(Path2Temp, 's_temp_dark_'+str(t)+'s.txt'), obj_fn[idx], fmt='%s')
             status = list_subtractor(os.path.join(Path2Temp, 's_temp_dark_'+str(t)+'s.txt'), os.path.join(Path2Data, 's_dark_'+str(t)+'s.fits'), 'Dark')
             print(f"Texp = {t} s dark subtraction: {status}")
-            logging.info(f"Texp = {t} s dark subtraction: {status}")
+            queue.put((logging.INFO, f"Texp = {t} s dark subtraction: {status}"))
             os.remove(os.path.join(Path2Temp, 's_temp_dark_'+str(t)+'s.txt'))
             print()
     return None
 
-def dark_subtractor(Path2Data, Path2Temp, lists_names, area, flip, s_bias_name):
+def dark_subtractor(Path2Data, Path2Temp, lists_names, area, flip, s_bias_name, queue):
     trimmer_data = trimmer(Path2Data, os.path.join(Path2Temp, 'dark_list.txt'), area, flip)
     print("Darks trimmed")
-    logging.info("Darks trimmed")
+    queue.put((logging.INFO, "Darks trimmed"))
     status = list_cosmo_cleaner(Path2Temp, 'dark_list.txt', 'dark_CRR_cleaned_list.txt')
     print(f"Darks {status}")
-    logging.info(f"Darks {status}")
+    queue.put((logging.INFO, f"Darks {status}"))
     print()
     status = list_subtractor(os.path.join(Path2Temp, 'dark_CRR_cleaned_list.txt'), os.path.join(Path2Data, s_bias_name), 'Bias')
     print(f"Darks: {status}")
-    logging.info(f"Darks: {status}")
+    queue.put((logging.INFO, f"Darks: {status}"))
     print()
     dark_exp = np.array([], dtype=int)
     dark_fn = np.array([])
@@ -58,7 +58,7 @@ def dark_subtractor(Path2Data, Path2Temp, lists_names, area, flip, s_bias_name):
             np.savetxt(os.path.join(Path2Temp, 's_dark_'+str(t)+'s.txt'), dark_fn[idx], fmt='%s')
             sdark_data = medianer(Path2Data, os.path.join(Path2Temp, 's_dark_'+str(t)+'s.txt'), os.path.join(Path2Data, 's_dark_'+str(t)+'s.fits'))
             print(f"Statistics for super dark file with Texp={t} s: Mean = {sdark_data[0]:.2f} Median = {sdark_data[1]:.2f} Sigma = {sdark_data[2]:.2f}")
-            logging.info(f"Statistics for super dark file with Texp={t} s: Mean = {sdark_data[0]:.2f} Median = {sdark_data[1]:.2f} Sigma = {sdark_data[2]:.2f}")
+            queue.put((logging.INFO, f"Statistics for super dark file with Texp={t} s: Mean = {sdark_data[0]:.2f} Median = {sdark_data[1]:.2f} Sigma = {sdark_data[2]:.2f}"))
         elif len(idx[0]) == 1:
             np.savetxt(os.path.join(Path2Temp, 's_dark_'+str(t)+'s.txt'), dark_fn[idx], fmt='%s')
             shutil.copy(dark_fn[idx][0], os.path.join(Path2Data, 's_dark_'+str(t)+'s.fits'))

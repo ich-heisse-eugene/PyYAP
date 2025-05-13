@@ -169,7 +169,7 @@ def nonlinearwave(nwave, specstr):
         raise ValueError('Cannot handle dispersion function of type %d' % ftype)
     return wave
 
-def resol_in_order(wave, spec, n):
+def resol_in_order(wave, spec, n, queue):
     """
         Computes resolution in a separate order
     """
@@ -202,7 +202,7 @@ def resol_in_order(wave, spec, n):
                 y.append(y_cur)
     if len(res) != 0:
         print(f"Order #{n:2.0f} {wave[0]:.1f}-{wave[-1]:.1f}A: Median R = {np.median(res):.0f}, dl = {np.median(dwl):.4f}. {len(res)} lines measured")
-        logging.info(f"Order #{n:2.0f} {wave[0]:.1f}-{wave[-1]:.1f}A: Median R = {np.median(res):.0f}, dl = {np.median(dwl):.4f}. {len(res)} lines measured")
+        queue.put((logging.INFO, f"Order #{n:2.0f} {wave[0]:.1f}-{wave[-1]:.1f}A: Median R = {np.median(res):.0f}, dl = {np.median(dwl):.4f}. {len(res)} lines measured"))
     else:
         return -1,-1,-1,-1,-1
     return res, wl, dwl, x, y
@@ -229,9 +229,9 @@ def fit_line(w, y):
             return -1, -1, -1, x_out, y_out
     return res_fwhm, popt[0], dlam, x_out, y_out
 
-def make_report_resol(w, sp, input_file, view=False):
+def make_report_resol(w, sp, input_file, view, queue):
     print("Test of spectral resolution:")
-    logging.info("Test of spectral resolution:")
+    queue.put((logging.INFO, "Test of spectral resolution:"))
     orders = np.arange(np.shape(w)[0], dtype=int)
     norders = len(orders)
     res = np.zeros(norders)
@@ -259,7 +259,7 @@ def make_report_resol(w, sp, input_file, view=False):
             spec = gridspec.GridSpec(ncols=nx, nrows=ny, figure=fig, hspace=0.1)
             cur_row = 0; cur_col = 0
             for i in orders[page+(page*nplots): page+(page*nplots)+nplots]:
-                res_ord, wl_ord, dwl_ord, x_ord, y_ord = resol_in_order(w[i,:], sp[i,:], i)
+                res_ord, wl_ord, dwl_ord, x_ord, y_ord = resol_in_order(w[i,:], sp[i,:], i, queue)
                 if res_ord != -1:
                     x_ord = np.array(x_ord).flatten()
                     y_ord = np.array(y_ord).flatten()
@@ -317,17 +317,13 @@ def make_report_resol(w, sp, input_file, view=False):
         plt.close()
     return np.median(result_resol)
 
-def get_sp_resolv(input_file):
+def get_sp_resolv(input_file, queue):
     w, sp = read_multispec(input_file)
-    R = make_report_resol(w, sp, input_file, False)
-    try:
-        hdulist = fits.open(input_file, mode = 'update')
+    R = make_report_resol(w, sp, input_file, False, queue)
+    with fits.open(input_file, mode = 'update') as hdulist:
         prihdr = hdulist[0].header
-    except IOError:
-        print ("Input/output error. File:", name)
-    finally:
         prihdr.set('R', R, 'Median spectral resolution of data')
         prihdr['HISTORY'] = 'Spectral resolution was measured from ThAr spectrum'
         hdulist[0].header = prihdr
-        hdulist.close()
+
     return None

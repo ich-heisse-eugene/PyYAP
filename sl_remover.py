@@ -2,7 +2,7 @@ from astropy.io import fits
 import os
 import shutil
 import numpy as np
-
+import multiprocessing as mp
 import logging
 
 from surf_fit import surf_fit
@@ -26,10 +26,10 @@ def read_traces(x_coo, ap_file):
         p = f[3].strip().rsplit()
         if len(p) == 4:
             n_orders = int(p[0]); poly_order = int(p[1])
-            adaptive = p[2]; ap_size = float(p[3])
+            adaptive = eval(p[2]); ap_size = float(p[3])
         else:
             print("Problem of reading the file with traces")
-        if adaptive == 'True':
+        if adaptive:
             for i in range(4, 4+n_orders):
                 p = f[i].strip().rsplit()
                 poly_trace_coef = np.asarray(p[3:3+poly_order+1], dtype=float)
@@ -42,12 +42,11 @@ def read_traces(x_coo, ap_file):
                 poly_trace_coef = np.asarray(p[3:3+poly_order+1], dtype=float)
                 Y.append(np.polyval(poly_trace_coef, x_coo))
                 FWHM.append(np.repeat(float(p[3+poly_order+1]), len(x_coo)))
-        print(f"{n_orders} orders read from file")
     return np.asarray(Y), np.asarray(FWHM)
 
-def sl_remover(dir_name, Path2Temp, file_name, ap_file, step, x_order, y_order, subtract, view):
-    print(f"scatter light removing for {file_name} started")
-    logging.info(f"scatter light removing for {file_name} started")
+def sl_remover(dir_name, Path2Temp, file_name, ap_file, step, x_order, y_order, subtract, view, queue):
+    print(f"Scattered light removal for {file_name} started")
+    queue.put((logging.INFO, f"Scattered light removal for {file_name} started"))
 
     #read image file
     hdulist = fits.open(os.path.join(dir_name, file_name))
@@ -55,7 +54,7 @@ def sl_remover(dir_name, Path2Temp, file_name, ap_file, step, x_order, y_order, 
     prihdr = hdulist[0].header
     hdulist.close()
 
-    orders, _ = read_traces(np.arrange(arr.shape[1]), ap_file)
+    orders, _ = read_traces(np.arange(arr.shape[1]), ap_file)
 
     X = []
     #calculate middle line for 2 close orders
@@ -69,11 +68,7 @@ def sl_remover(dir_name, Path2Temp, file_name, ap_file, step, x_order, y_order, 
     for ii in range(0, background_X.shape[0]):
         Y.append(X[:, int(background_X[ii])])
 
-    Y = np.asarray(Y).T #array with Ycoo of background probe[number of probe along X, number of probe along Y]
-
-    print(f"{Y.shape[1]} x {Y.shape[0]} points for scatter light interpolation")
-    logging.info(f"{Y.shape[1]} x {Y.shape[0]} points for scatter light interpolation")
-
+    Y = np.asarray(Y).T #array with Ycoo of background probe [number of probe along X, number of probe along Y]
     x=background_X.tolist()
     XX = np.array([x for i in Y[:,0]])
 
@@ -91,18 +86,6 @@ def sl_remover(dir_name, Path2Temp, file_name, ap_file, step, x_order, y_order, 
             Z[ii, jj] = np.min(arr[int(Y[ii,jj]-2):int(Y[ii,jj]+3), int(background_X[jj])])
 
     Z = gaussian_filter(Z, sigma=(2.5, 6.5), mode='nearest')
-    print(f"Measured scatter light:")
-    print(f"maximum {np.max(Z):.2f}")
-    print(f"minimum {np.min(Z):.2f}")
-    print(f"median {np.median(Z):.2f}")
-    print(f"sigma {np.std(Z)}")
-    logging.info(f"Measured scatter light:")
-    logging.info(f"maximum {np.max(Z):.2f}")
-    logging.info(f"minimum {np.min(Z):.2f}")
-    logging.info(f"median {np.median(Z):.2f}")
-    logging.info(f"sigma {np.std(Z):.2f}")
-    print()
-
     # # Debug. Surface plot of scattered light
     if view:
         fig = plt.figure()
@@ -113,18 +96,6 @@ def sl_remover(dir_name, Path2Temp, file_name, ap_file, step, x_order, y_order, 
 
     # sc_light = median_filter(surf_fit(XX, Y, Z, x_order, y_order, arr.shape[0], arr.shape[1]), size=15)
     sc_light = surf_fit(XX, Y, Z, x_order, y_order, arr.shape[0], arr.shape[1])
-
-    print("Model scatter light:")
-    print(f"maximum {np.max(sc_light):.2f}")
-    print(f"minimum {np.min(sc_light):.2f}")
-    print(f"median {np.median(sc_light):.2f}")
-    print(f"sigma {np.std(sc_light):.2f}")
-    logging.info("Model scatter light:")
-    logging.info(f"maximum {np.max(sc_light):.2f}")
-    logging.info(f"minimum {np.min(sc_light):.2f}")
-    logging.info(f"median {np.median(sc_light):.2f}")
-    logging.info(f"sigma {np.std(sc_light):.2f}")
-    print()
 
     ##test
     if subtract:
@@ -138,16 +109,40 @@ def sl_remover(dir_name, Path2Temp, file_name, ap_file, step, x_order, y_order, 
             Z_new[ii, jj]=np.median(arr_new[int(Y[ii,jj]-1) : int(Y[ii,jj]+1), int(background_X[ii]-step/2):int(background_X[ii]+step/2)])
     Z_new = np.transpose(Z_new)
 
-    print("Residual scatter light:")
-    print(f"maximum {np.max(Z_new):.2f}")
-    print(f"minimum  {np.min(Z_new):.2f}")
-    print(f"median {np.median(Z_new):.2f}")
-    print(f"sigma {np.std(Z_new):.2f}")
-    logging.info(f"maximum {np.max(Z_new):.2f}")
-    logging.info(f"minimum  {np.min(Z_new):.2f}")
-    logging.info(f"median {np.median(Z_new):.2f}")
-    logging.info(f"sigma {np.std(Z_new):.2f}")
-    print()
+    print(f"File {file_name} --- {len(orders)} orders\nUse {Y.shape[1]} x {Y.shape[0]} points for scattered light interpolation\n \
+    Measured levels of the scattered light:\n \
+                           maximum {np.max(Z):.2f}\n \
+                           minimum {np.min(Z):.2f}\n \
+                           median {np.median(Z):.2f}\n \
+                           sigma {np.std(Z):.2f}\n \
+    Model of the scattered light:\n \
+                           maximum {np.max(sc_light):.2f}\n \
+                           minimum {np.min(sc_light):.2f}\n \
+                           median {np.median(sc_light):.2f}\n \
+                           sigma {np.std(sc_light):.2f}\n \
+    Residual signal:\n \
+                           maximum {np.max(Z_new):.2f}\n \
+                           minimum  {np.min(Z_new):.2f}\n \
+                           median {np.median(Z_new):.2f}\n \
+                           sigma {np.std(Z_new):.2f}")
+
+
+    queue.put((logging.INFO, f"File: {file_name}\n{Y.shape[1]} x {Y.shape[0]} points for scattered light interpolation\n \
+    Measured levels of the scattered light:\n \
+                           maximum {np.max(Z):.2f}\n \
+                           minimum {np.min(Z):.2f}\n \
+                           median {np.median(Z):.2f}\n \
+                           sigma {np.std(Z):.2f}\n \
+    Model of the scattered light:\n \
+                           maximum {np.max(sc_light):.2f}\n \
+                           minimum {np.min(sc_light):.2f}\n \
+                           median {np.median(sc_light):.2f}\n \
+                           sigma {np.std(sc_light):.2f}\n \
+    Residual signal:\n \
+                           maximum {np.max(Z_new):.2f}\n \
+                           minimum  {np.min(Z_new):.2f}\n \
+                           median {np.median(Z_new):.2f}\n \
+                           sigma {np.std(Z_new):.2f}"))
 
     #plot
     if view:
@@ -177,17 +172,54 @@ def sl_remover(dir_name, Path2Temp, file_name, ap_file, step, x_order, y_order, 
     hdu.header['SOURCE'] = file_name
     hdu.header['IMAGETYP'] = 'scattered light'
     hdu.writeto(scatter_file, overwrite=True)
-    print(f"Map of the scattered light was saved to {scatter_file}")
-    logging.info(f"Map of the scattered light was saved to {scatter_file}")
+    print(f"A map of the scattered light saved to {scatter_file}")
+    queue.put((logging.INFO, f"A map of the scattered light saved to {scatter_file}"))
 
     arr_new=np.float32(arr_new)
     cleared_file = ''
     hdulist[0].data = arr_new
     cleared_file = os.path.join(dir_name, os.path.splitext(file_name)[0] + '_SLR.fits')
     if subtract:
-        prihdr['HISTORY'] = 'scatter light removed'
+        prihdr['HISTORY'] = 'scattered light removed'
     hdulist.writeto(cleared_file, overwrite=True)
-    print(f"cleared image saved to {cleared_file}")
-    logging.info(f"cleared image saved to {cleared_file}")
-
+    print(f"Cleared image has been saved to {cleared_file}")
+    queue.put((logging.INFO, f"Cleared image has been saved to {cleared_file}"))
     return(cleared_file)
+
+def process_multi(Path2Data, Path2Temp, name, ap_file, step, x_order, y_order, subtract, view, queue):
+    sl_remover_data = sl_remover(Path2Data, Path2Temp, name, ap_file, step, x_order, y_order, subtract, view, queue)
+    shutil.move(os.fspath(os.path.join(Path2Data, name)), os.fspath(Path2Temp))
+    return sl_remover_data
+
+def sl_subtract(Path2Data, Path2Temp, conf, subtract, queue):
+    view = eval(conf['view'])
+    s_flat_name = conf['s_flat_name']
+    step = int(conf['step'])
+    x_order = int(conf['x_order'])
+    y_order = int(conf['y_order'])
+    ap_file = os.path.join(Path2Temp, 'traces.txt') ##
+    sl_remover_data = sl_remover(Path2Data, Path2Temp, s_flat_name, ap_file, step, x_order, y_order, subtract, view, queue)
+    shutil.move(os.fspath(os.path.join(Path2Data, s_flat_name)), os.fspath(Path2Temp))
+    ap_file = os.path.join(Path2Temp, 'traces.txt')
+
+    with open(os.path.join(Path2Temp, 'obj_CRR_cleaned_list.txt'), 'r') as f:
+        proc_args = [(Path2Data, Path2Temp, line.strip().split(os.sep)[-1], ap_file, step, x_order, y_order, subtract, view, queue) for line in f]
+        nCPUs = os.cpu_count()
+        out_list = []
+        if 'threading' in conf and eval(conf['threading']) and nCPUs > 2:
+            with mp.Pool(processes=nCPUs) as pool:
+                res_async = pool.starmap_async(process_multi, proc_args, chunksize=nCPUs)
+                res_async.wait()
+                out_list.extend(res_async.get())
+        else:
+            for item in proc_args:
+                res_mono = process_multi(Path2Data, Path2Temp, item[2], ap_file, step, x_order, y_order, subtract, view, queue)
+                out_list.extend([res_mono])
+
+    with open(os.path.join(Path2Temp, 'obj_sl_cleaned_list.txt'), 'a') as f_out:
+        for item in out_list:
+            print(item, file=f_out)
+
+    flat_name = os.path.join(Path2Data, 's_flat_SLR.fits')
+    list_name = os.path.join(Path2Temp, 'obj_sl_cleaned_list.txt')
+    return flat_name, list_name

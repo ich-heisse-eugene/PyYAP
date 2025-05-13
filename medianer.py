@@ -21,7 +21,6 @@ def medianer(dir_name, list_name, out_name):
             prihdr = fits.getheader(name)
             file_list.append(name.split(os.sep)[-1])
             tm = Time.Time(prihdr['DATE-OBS'], scale='utc', format='fits')
-            print(line, prihdr['DATE-OBS'], tm)
             JD1.append(tm.jd)
             JD2.append(tm.jd + prihdr['EXPTIME']/2./86400.)
             JD3.append(tm.mjd + prihdr['EXPTIME']/2./86400.)
