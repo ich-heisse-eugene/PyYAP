@@ -119,6 +119,8 @@ def fill_headers(file_names, device, ver):
                     elif 'MOUNTRA' in hdr and 'MOUNTDE' in hdr:
                         if hdr['MOUNTRA'] != '' and hdr['MOUNTDE'] != '':
                             ra = hdr['MOUNTRA']; dec = hdr['MOUNTDE']
+                            hdr.set('RA', ra, 'RA in hours')
+                            hdr.set('DEC', dec, 'DEC in degrees')
                     else:
                         print(f"Requesting information for {objnames[ii]} from SIMBAD")
                         simbad_session = Simbad()
