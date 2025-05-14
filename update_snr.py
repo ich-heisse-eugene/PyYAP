@@ -9,23 +9,15 @@ def update_snr(input_file, queue):
     norders = np.shape(wl)[0]
     npix = np.shape(wl)[1]
     pix = np.linspace(0, npix, 5, dtype=int)
-    try:
-        hdulist = fits.open(input_file, mode = 'update')
-    except IOError:
-        print ("ERROR: Cannot open file '%s'" % input_file)
-    finally:
+    with fits.open(input_file, mode = 'update') as hdulist:
         prihdr = hdulist[0].header
         # Update information about sp. resolution
         refspec = prihdr['REFSPEC'].replace('_disp.txt', '_WCS.fits')
-        try:
-            hduref = fits.open(refspec)
-        except IOError:
-            print ("ERROR: Cannot open file '%s'" % refspec)
-        finally:
+        with fits.open(refspec) as hduref:
             hdrref = hduref[0].header
             R = hdrref['R']
             prihdr.set('RESOL', int(R), 'Median spectral resolution of data')
-            hduref.close()
+
         #end
         for i in range(norders):
             key_n = 'SNR'+str(i)
@@ -42,11 +34,6 @@ def update_snr(input_file, queue):
                     key_v = key_v + str(int(snr0))+' '
                 key_c = key_c + str(int(w0))+'A  '
             prihdr.set(key_n, key_v, key_c)
-    try:
         hdulist[0].header = prihdr
-    except IOError:
-        print(f"ERROR: Cannot write file {name}")
-    finally:
-        hdulist.close()
     return None
 

@@ -49,10 +49,10 @@ def sl_remover(dir_name, Path2Temp, file_name, ap_file, step, x_order, y_order, 
     queue.put((logging.INFO, f"Scattered light removal for {file_name} started"))
 
     #read image file
-    hdulist = fits.open(os.path.join(dir_name, file_name))
-    arr = hdulist[0].data.copy()
-    prihdr = hdulist[0].header
-    hdulist.close()
+    with fits.open(os.path.join(dir_name, file_name)) as hdulist:
+        arr = hdulist[0].data.copy()
+        prihdr = hdulist[0].header
+
 
     orders, _ = read_traces(np.arange(arr.shape[1]), ap_file)
 

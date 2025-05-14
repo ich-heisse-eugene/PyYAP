@@ -26,9 +26,6 @@ from matplotlib.backends.backend_pdf import PdfPages
 fontsize = 8
 mpl.rcParams['xtick.labelsize'] = fontsize
 mpl.rcParams['ytick.labelsize'] = fontsize
-mpl.rcParams['font.family'] = 'serif'
-mpl.rcParams['font.serif'] = 'cm'
-mpl.rcParams['text.usetex'] = True
 
 def read_multispec(input_file):
     """
@@ -36,14 +33,11 @@ def read_multispec(input_file):
     Recognize IRAF multipspec spectra with different types of dispersion solution
     ES. 2020-10-21
     """
-    try:
-        hdu = fits.open(input_file)
-    except Exception:
-        print("Error while opening the input file")
-    finally:
+
+    with fits.open(input_file) as hdu:
         header = hdu[0].header
         spectrum = hdu[0].data
-        hdu.close()
+
     sizes = np.shape(spectrum)
     if len(sizes) == 1:
         nspec = 1
@@ -201,8 +195,8 @@ def resol_in_order(wave, spec, n, queue):
                 x.append(x_cur)
                 y.append(y_cur)
     if len(res) != 0:
-        print(f"Order #{n:2.0f} {wave[0]:.1f}-{wave[-1]:.1f}A: Median R = {np.median(res):.0f}, dl = {np.median(dwl):.4f}. {len(res)} lines measured")
-        queue.put((logging.INFO, f"Order #{n:2.0f} {wave[0]:.1f}-{wave[-1]:.1f}A: Median R = {np.median(res):.0f}, dl = {np.median(dwl):.4f}. {len(res)} lines measured"))
+        print(f"Order #{n:2.0f} {wave[0]:.1f}-{wave[-1]:.1f}Å: Median R = {np.median(res):.0f}, dl = {np.median(dwl):.4f}Å. {len(res)} lines measured")
+        queue.put((logging.INFO, f"Order #{n:2.0f} {wave[0]:.1f}-{wave[-1]:.1f}Å: Median R = {np.median(res):.0f}, dl = {np.median(dwl):.4f}Å. {len(res)} lines measured"))
     else:
         return -1,-1,-1,-1,-1
     return res, wl, dwl, x, y
@@ -229,7 +223,8 @@ def fit_line(w, y):
             return -1, -1, -1, x_out, y_out
     return res_fwhm, popt[0], dlam, x_out, y_out
 
-def make_report_resol(w, sp, input_file, view, queue):
+def make_report_resol(input_file, view, queue):
+    w, sp = read_multispec(input_file)
     print("Test of spectral resolution:")
     queue.put((logging.INFO, "Test of spectral resolution:"))
     orders = np.arange(np.shape(w)[0], dtype=int)
@@ -244,19 +239,20 @@ def make_report_resol(w, sp, input_file, view, queue):
     result_resol = np.array([])
     nlines = 0
     # Multipage PDF output
-    with PdfPages(input_file.replace(".fits", ".report.pdf")) as pdf:
+    out_name = input_file.replace(".fits", ".report.pdf")
+    with PdfPages(out_name) as pdf:
         d = pdf.infodict()
         d['Title'] = f"Spectral resolution measured from file {input_file}"
         d['ModDate'] = datetime.datetime.today()
         nx = 2 # Number of columns in output
-        ny = 5 # number of rows in output
+        ny = 3 # number of rows in output
         nplots = nx*ny # number of plots per page
         npages = int(np.ceil(norders / nplots))
         cur_order = 0
         for page in range(npages):
             fig = plt.figure(constrained_layout=True, dpi=300, tight_layout=True)
             fig.set_size_inches(8.27, 11.69, forward=True)
-            spec = gridspec.GridSpec(ncols=nx, nrows=ny, figure=fig, hspace=0.1)
+            spec = gridspec.GridSpec(ncols=nx, nrows=ny, figure=fig, hspace=0.3, wspace=0.3)
             cur_row = 0; cur_col = 0
             for i in orders[page+(page*nplots): page+(page*nplots)+nplots]:
                 res_ord, wl_ord, dwl_ord, x_ord, y_ord = resol_in_order(w[i,:], sp[i,:], i, queue)
@@ -286,14 +282,13 @@ def make_report_resol(w, sp, input_file, view, queue):
                         xx = np.linspace(np.min(x_ord), np.max(x_ord), 100)
                         f_ax.plot(xx, gauss(xx, *popt), 'r-', lw=0.5)
                         R = np.mean(w[i,:]) / (np.median(dwl_ord)*fwhm)
-                        label = f"R={R:.0f}\n $\Delta\lambda$={np.median(dwl_ord):.4f} Å/px\nFWHM={fwhm:.2f} px\n{len(dwl_ord)} lines"
+                        label = f"R={R:.0f}\n Δλ={np.median(dwl_ord):.4f} Å/px\nFWHM={fwhm:.2f} px\n{len(dwl_ord)} lines"
                         f_ax.annotate(label, (2.5, 0.7), va='center', fontsize=fontsize-1)
                     cur_col += 1
                     if cur_col > nx-1:
                         cur_col = 0
                         cur_row += 1
             pdf.savefig()
-            plt.close()
         try:
             p0 = np.array([1, 0, 1., 1.])
             popt, pcov = curve_fit(gauss, result_x, result_y, p0, maxfev=10000)
@@ -308,7 +303,7 @@ def make_report_resol(w, sp, input_file, view, queue):
             ax.plot(result_x, result_y, 'b.', ms=0.5)
             ax.plot(xx, gauss(xx, *popt), 'r-', lw=0.5)
             R = np.mean(w) / (np.median(result_dwl0)*fwhm)
-            label = f"Median R={np.median(result_resol):.0f}\nMedian $\Delta\lambda$={np.median(result_dwl0):.4f} \
+            label = f"Median R={np.median(result_resol):.0f}\nMedian Δλ={np.median(result_dwl0):.4f} \
                                Å/px\n R from fit = {R:.0f} \n FWHM={fwhm:.2f} px\n{nlines} lines"
             ax.annotate(label, (2.5, 0.7), va='center', fontsize=fontsize-1)
             ax.set_xlabel("Pixel")
@@ -318,12 +313,12 @@ def make_report_resol(w, sp, input_file, view, queue):
     return np.median(result_resol)
 
 def get_sp_resolv(input_file, queue):
-    w, sp = read_multispec(input_file)
-    R = make_report_resol(w, sp, input_file, False, queue)
+    R = make_report_resol(input_file, False, queue)
     with fits.open(input_file, mode = 'update') as hdulist:
         prihdr = hdulist[0].header
         prihdr.set('R', R, 'Median spectral resolution of data')
         prihdr['HISTORY'] = 'Spectral resolution was measured from ThAr spectrum'
         hdulist[0].header = prihdr
+        hdulist.flush()
 
     return None

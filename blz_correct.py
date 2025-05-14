@@ -2,17 +2,8 @@ import os
 from astropy.io import fits
 import numpy as np
 
-import matplotlib.pyplot as plt
-import matplotlib as mpl
-import matplotlib.gridspec as gridspec
-
 import warnings
 warnings.filterwarnings("ignore")
-
-fontsize = 7
-mpl.rcParams['xtick.labelsize'] = fontsize
-mpl.rcParams['ytick.labelsize'] = fontsize
-mpl.rcParams['text.usetex'] = False
 
 def read_multispec(input_file):
     """
@@ -20,14 +11,11 @@ def read_multispec(input_file):
     Recognizes IRAF multipspec spectra with different types of dispersion solution
     ES. 2020-10-21
     """
-    try:
-        hdu = fits.open(input_file)
-    except Exception:
-        print("Error while opening the input file")
-    finally:
+
+    with fits.open(input_file) as hdu:
         header = hdu[0].header
         spectrum = hdu[0].data
-        hdu.close()
+
     sizes = np.shape(spectrum)
     if len(sizes) == 1:
         nspec = 1

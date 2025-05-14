@@ -32,9 +32,8 @@ def read_traces(x_coo, ap_file):
         print(f"{n_orders} orders read from file")
     return np.asarray(Y), np.asarray(FWHM)
 
-hdulist = fits.open(argv[1])
-ordim = hdulist[0].data.copy()
-hdulist.close()
+with fits.open(argv[1]) as hdulist:
+    ordim = hdulist[0].data.copy()
 
 aperture = 1.1
 

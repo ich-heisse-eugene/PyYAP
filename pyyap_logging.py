@@ -4,7 +4,7 @@ import logging.handlers
 def listener(queue, logfile, level=logging.INFO):
     logger = logging.getLogger()
     logger.setLevel(level)
-    fh = logging.FileHandler(logfile, "a")
+    fh = logging.FileHandler(logfile, 'a', 'utf-8')
     fmt = logging.Formatter('%(asctime)s - %(message)s')
     fh.setFormatter(fmt)
     logger.addHandler(fh)

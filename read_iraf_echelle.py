@@ -11,9 +11,6 @@ import matplotlib as mpl
 fontsize = 8
 mpl.rcParams['xtick.labelsize'] = fontsize
 mpl.rcParams['ytick.labelsize'] = fontsize
-mpl.rcParams['font.family'] = 'serif'
-mpl.rcParams['font.serif'] = 'cm'
-mpl.rcParams['text.usetex'] = True
 
 def read_multispec(input_file):
     """
@@ -21,14 +18,10 @@ def read_multispec(input_file):
     Recognize IRAF multipspec spectra with different types of dispersion solution
     ES. 2020-10-21
     """
-    try:
-        hdu = fits.open(input_file)
-    except Exception:
-        print("Error while opening the input file")
-    finally:
+    with fits.open(input_file) as hdu:
         header = hdu[0].header
         spectrum = hdu[0].data
-        hdu.close()
+
     sizes = np.shape(spectrum)
     if len(sizes) == 1:
         nspec = 1
@@ -158,7 +151,7 @@ def plot_order(w, r, ordnum):
     nord = np.shape(w)[0]
     fig = plt.figure(figsize=(15,3), tight_layout=True)
     ax = fig.add_subplot(1,1,1)
-    ax.set_xlabel(r"Wavelength [\AA]")
+    ax.set_xlabel(r"Wavelength [Å]")
     ax.set_ylabel("Intensity")
     if ordnum == -99:
         for i in range(nord):

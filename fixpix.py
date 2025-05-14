@@ -38,13 +38,8 @@ def replace_bad_data(img, idx, idy, columns):
 def fixpix(dir_name, list_name, mask_file, area, flip):
     columns = True
     # Define the map of bad pixels
-    try:
-        mhdu = fits.open(mask_file)
+    with fits.open(mask_file) as mhdu:
         mask = mhdu[0].data[0].copy()
-        mhdu.close()
-    finally:
-        pass
-        # print(f"Mask file is {mask_file}")
 
     # trim and flip mask
     if mask.shape[1]>(area[1]-area[0]) and mask.shape[0]>(area[3]-area[2]):
@@ -79,11 +74,9 @@ def fixpix(dir_name, list_name, mask_file, area, flip):
     with open(os.path.join(dir_name, list_name), 'r') as f:
         for line in f:
             name = line.strip()
-            try:
-                hdulist = fits.open(name, mode = 'update')
+            with fits.open(name, mode = 'update') as hdulist:
                 data = hdulist[0].data.copy()
                 prihdr = hdulist[0].header
-                hdulist.close()
 
                 img_fixed = replace_bad_data(data, idx, idy, columns)
                 hdulist[0].data = img_fixed
@@ -92,8 +85,7 @@ def fixpix(dir_name, list_name, mask_file, area, flip):
                     hdulist.writeto(name, overwrite=True)
                 except IOError:
                     print ("ERROR: Can't write file '%s'" % name)
-            except IOError:
-                print ("Can't open file:", name)
+
     f.close()
 
     return ("Fixed")

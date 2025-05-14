@@ -13,8 +13,6 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
-mpl.rcParams['text.usetex'] = True
-
 import warnings
 warnings.simplefilter("ignore")
 

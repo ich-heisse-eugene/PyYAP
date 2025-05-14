@@ -15,8 +15,6 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
-mpl.rcParams['text.usetex'] = True
-
 import warnings
 warnings.simplefilter("ignore")
 
@@ -151,15 +149,15 @@ def eval_shift(dir_name, file_arc_spec, file_reflines, dx, dy, dxy, view): # x_r
 
 
 
-# ########
-dx = 3
-dy = -5
-dxy = 10
-file_arc_spec = argv[1].strip()
-file_reflines = "reflines.txt"
-dir_name = os.path.realpath(".")
-view = True
-
-eval_shift(dir_name, file_arc_spec, file_reflines, dx, dy, dxy, view)
-
-exit(0)
+# # ########
+# dx = 3
+# dy = -5
+# dxy = 10
+# file_arc_spec = argv[1].strip()
+# file_reflines = "reflines.txt"
+# dir_name = os.path.realpath(".")
+# view = True
+#
+# eval_shift(dir_name, file_arc_spec, file_reflines, dx, dy, dxy, view)
+#
+# exit(0)

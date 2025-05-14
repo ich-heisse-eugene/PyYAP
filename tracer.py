@@ -16,7 +16,6 @@ import matplotlib.cm as cm
 from medianer import medianer
 
 from sklearn.cluster import AgglomerativeClustering
-mpl.rcParams['text.usetex'] = False
 
 import warnings
 warnings.simplefilter("ignore")

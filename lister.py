@@ -25,56 +25,55 @@ def lister(data_dir, raw_dir, temp_dir, queue):
         for ii in range (0,len(file_list)):
             try:
                 shutil.copy2(file_list[ii], raw_dir)
-                hdulist = fits.open(file_list[ii], mode='update')
-                prihdr = hdulist[0].header
-                if 'IMAGETYP' not in prihdr:
-                    if os.fspath(file_list[ii]).lower().find('bias') != -1:
-                        im_type = 'BIAS'
-                    if os.fspath(file_list[ii]).lower().find('dark') != -1:
-                        im_type = 'DARK'
-                    elif os.fspath(file_list[ii]).lower().find('flat') != -1:
-                        im_type = 'FLAT'
-                    elif os.fspath(file_list[ii]).lower().find('thar') != -1:
-                        im_type = 'THAR'
-                    elif os.fspath(file_list[ii]).lower().find('obj') != -1:
-                        im_type = 'OBJ'
-                else:
-                    im_type = prihdr['IMAGETYP']
-                if im_type.lower().find('bias') != -1:
-                    print(file_list[ii], file=bf)
-                    counter = counter-1
-                elif im_type.lower().find('flat') != -1:
-                    if 'IMAGETYP' in prihdr:
-                        prihdr['IMAGETYP'] = 'FLAT'
+                with fits.open(file_list[ii], mode='update') as hdulist:
+                    prihdr = hdulist[0].header
+                    if 'IMAGETYP' not in prihdr:
+                        if os.fspath(file_list[ii]).lower().find('bias') != -1:
+                            im_type = 'BIAS'
+                        if os.fspath(file_list[ii]).lower().find('dark') != -1:
+                            im_type = 'DARK'
+                        elif os.fspath(file_list[ii]).lower().find('flat') != -1:
+                            im_type = 'FLAT'
+                        elif os.fspath(file_list[ii]).lower().find('thar') != -1:
+                            im_type = 'THAR'
+                        elif os.fspath(file_list[ii]).lower().find('obj') != -1:
+                            im_type = 'OBJ'
                     else:
-                        prihdr.set('IMAGETYP', 'FLAT', 'Flat field spectrum')
-                    print(file_list[ii], file=ff)
-                    counter = counter-1
-                elif im_type.lower().find('dark') != -1:
-                    if 'IMAGETYP' in prihdr:
-                        prihdr['IMAGETYP'] = 'DARK'
-                    else:
-                        prihdr.set('IMAGETYP', 'DARK', 'Dark current frame')
-                    if darks == False: darks = True
-                    print(file_list[ii], file=df)
-                    counter = counter-1
-                elif im_type.lower().find('thar') != -1:
-                    if 'IMAGETYP' in prihdr:
-                        prihdr['IMAGETYP'] = 'THAR'
-                    else:
-                        prihdr.set('IMAGETYP', 'THAR', 'ARC spectrum')
-                    print(file_list[ii], file=tf)
-                    counter = counter-1
-                elif im_type.lower().find('obj') != -1:
-                    if 'IMAGETYP' in prihdr:
-                        prihdr['IMAGETYP'] = 'OBJ'
-                    else:
-                        prihdr.set('IMAGETYP', 'OBJ', 'Scientific spectrum')
-                    print(file_list[ii], file=of)
-                    counter = counter-1
-                hdulist[0].header = prihdr
-                hdulist.flush()
-                hdulist.close()
+                        im_type = prihdr['IMAGETYP']
+                    if im_type.lower().find('bias') != -1:
+                        print(file_list[ii], file=bf)
+                        counter = counter-1
+                    elif im_type.lower().find('flat') != -1:
+                        if 'IMAGETYP' in prihdr:
+                            prihdr['IMAGETYP'] = 'FLAT'
+                        else:
+                            prihdr.set('IMAGETYP', 'FLAT', 'Flat field spectrum')
+                        print(file_list[ii], file=ff)
+                        counter = counter-1
+                    elif im_type.lower().find('dark') != -1:
+                        if 'IMAGETYP' in prihdr:
+                            prihdr['IMAGETYP'] = 'DARK'
+                        else:
+                            prihdr.set('IMAGETYP', 'DARK', 'Dark current frame')
+                        if darks == False: darks = True
+                        print(file_list[ii], file=df)
+                        counter = counter-1
+                    elif im_type.lower().find('thar') != -1:
+                        if 'IMAGETYP' in prihdr:
+                            prihdr['IMAGETYP'] = 'THAR'
+                        else:
+                            prihdr.set('IMAGETYP', 'THAR', 'ARC spectrum')
+                        print(file_list[ii], file=tf)
+                        counter = counter-1
+                    elif im_type.lower().find('obj') != -1:
+                        if 'IMAGETYP' in prihdr:
+                            prihdr['IMAGETYP'] = 'OBJ'
+                        else:
+                            prihdr.set('IMAGETYP', 'OBJ', 'Scientific spectrum')
+                        print(file_list[ii], file=of)
+                        counter = counter-1
+                    hdulist[0].header = prihdr
+                    hdulist.flush()
             except IOError:
                 print("Can't open file: ", file_list[ii])
                 queue.put((logging.INFO, "Err: Can't open file: {file_list[ii]}"))
