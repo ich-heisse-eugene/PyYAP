@@ -166,7 +166,7 @@ def fill_headers(file_names, device, ver):
                     hdr['UTEND'] = ut_end
                 else:
                     hdr.set('UTEND', ut_end, '')
-                hdr.append(('PIPELINE', f"PyYAPv{ver}", 'Pipeline version''), end=True)
+                hdr.append(('PIPELINE', f"PyYAPv{ver}", 'Pipeline version'), end=True)
                 hdu[0].header = hdr
                 hdu.flush()
                 print("File %s has been updated" %(files[ii].strip()))
