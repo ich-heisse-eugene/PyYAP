@@ -1,4 +1,4 @@
-Pkg_path = "/Path/to/directory_with_PyYAP"
+Pkg_path = "/home/eugene/PyYAP"
 # Import general modules
 import time
 from datetime import datetime, date, time
@@ -36,6 +36,7 @@ warnings.simplefilter("ignore")
 warnings.filterwarnings("ignore")
 
 Pkg_path = os.path.realpath(Pkg_path)
+ver = "2025.05"
 
 #####################################################################################
 ## Parameters
@@ -485,7 +486,7 @@ if __name__ == "__main__":
     if os.path.isfile(os.path.join(Data_path, 'names.txt')):
         from check_header import fill_headers
         print(f"Correcting FITS headers in {Data_path} \r")
-        fill_headers(os.path.join(Data_path, 'names.txt'), conf['device'])
+        fill_headers(os.path.join(Data_path, 'names.txt'), conf['device'], ver)
     if not os.path.isfile(os.path.join(Data_path, args.device + '.conf')):
         shutil.copy(os.path.join(Pkg_path, 'devices', args.device, args.device+'.conf'), Data_path)
     with open(os.path.join(Data_path, args.device + '.conf')) as f:
