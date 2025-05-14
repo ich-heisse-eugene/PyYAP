@@ -61,7 +61,7 @@ def fill_headers(file_names, device, ver):
         print(f"File: {files[ii]}\tObjname: {objnames[ii]}")
         with fits.open(files[ii].strip(), mode='update') as hdu:
             hdr = hdu[0].header
-            if 'PIPELINE' not in hdr or hdr['PIPELINE'].lower().searched("pyyap") == -1:
+            if 'PIPELINE' not in hdr or hdr['PIPELINE'].lower().find("pyyap") == -1:
                 if hdr['NAXIS'] == 2:
                     data = hdu[0].data.copy()
                 elif hdr['NAXIS'] == 3:
