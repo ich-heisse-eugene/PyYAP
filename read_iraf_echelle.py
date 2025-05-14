@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/local/bin/python3.11
 from sys import argv, exit
 from astropy.io import fits
 import numpy as np
@@ -147,12 +147,8 @@ def nonlinearwave(nwave, specstr):
         raise ValueError('Cannot handle dispersion function of type %d' % ftype)
     return wave
 
-def plot_order(w, r, ordnum):
+def plot_order(w, r, ordnum, ax):
     nord = np.shape(w)[0]
-    fig = plt.figure(figsize=(15,3), tight_layout=True)
-    ax = fig.add_subplot(1,1,1)
-    ax.set_xlabel(r"Wavelength [Å]")
-    ax.set_ylabel("Intensity")
     if ordnum == -99:
         for i in range(nord):
             ax.plot(w[i], r[i], lw=0.9, ls='-')
@@ -160,11 +156,20 @@ def plot_order(w, r, ordnum):
         ax.plot(w[ordnum], r[ordnum], ls='-', lw=0.9, color='red')
     else:
         print("Wrong number of the order")
-    plt.show()
     return None
 
 if __name__ == "__main__":
     if len(argv) >= 3:
-        wl, sp = read_multispec(argv[1])
-        plot_order(wl, sp, int(argv[2]))
+        if argv[1].find(',') != -1:
+            flist = argv[1].split(',')
+        else:
+            flist = [argv[1]]
+        fig = plt.figure(figsize=(15,3), tight_layout=True)
+        ax = fig.add_subplot(1,1,1)
+        ax.set_xlabel(r"Wavelength [Å]")
+        ax.set_ylabel("Intensity")
+        for f in flist:
+            wl, sp = read_multispec(f)
+            plot_order(wl, sp, int(argv[2]), ax)
+        plt.show()
     exit(0)
