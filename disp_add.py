@@ -60,6 +60,7 @@ def disp_add(fits_name, thar_name, view, queue):
                     queue.put((logging.INFO, f"Object with RA={ra}, DEC={dec}, J{epoch}"))
                     queue.put((logging.INFO, f"Observatory at lat={obslat}, lon={obslon}, alt={obsalt}"))
                     queue.put((logging.INFO, f"BJD={bjd:.5f}, BCRV={bcr.to(u.km/u.s).value:.3f} km/s"))
+                    bcr = bcr.to(u.km/u.s).value
                 else:
                     print("No information about the observatory in the header. Wavelength remains uncorrected")
                     queue.put((logging.INFO, "No information about the observatory in the header. Wavelength remains uncorrected"))
@@ -77,7 +78,6 @@ def disp_add(fits_name, thar_name, view, queue):
 
     WAT2 = ''
     add_string = ''
-
     X = np.arange(0, spectrum.shape[1], 1)
     for ii in range(0, spectrum.shape[0]):
         O = np.empty_like(X)
