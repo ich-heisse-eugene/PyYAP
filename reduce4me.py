@@ -1,4 +1,4 @@
-Pkg_path = "/Volumes/DATA0/work/PyYAP"
+Pkg_path = "/path/to/directory/with/this/file"
 # Import general modules
 import time
 from datetime import datetime, date, time
