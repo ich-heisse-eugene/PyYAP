@@ -23,20 +23,16 @@ Warning:
 2. Before the first run, it is mandatory to create in the directory with FITS-files an ASCII file names.txt of the following format:
 
 name-of-bias-file.fits   ;  Bias
-
 name-of-flat-file.fits   ;  Flat
-
 name-of-obj-file.fits   ;  HD 92554*
-
 name-of-arc-file.fits   ; ThAr
-
 
 *Objects' names must be recognizable by Simbad
 
 The minimum set of types must include bias, fits, object, thar
 
-Play with the program or contact me if you need help: esemenko@gmail.com or fb.com/eugene.semenko
+Play with the program or contact me if you need help: eugene AT narit.or.th
 
 Eugene Semenko
 
-Last update 07 Nov 2021, NARIT
+Last update 27 May 2025, NARIT
