@@ -13,14 +13,14 @@ Examples of usage:
 - lazy regime:
 python3  /path/to/the/package/reduce4me.py /current/work/directory/with/FITSfiles 
 - advanced regime (extract data using APEX algorithm with the subtraction of scattered and without removing of temporary files):
-python3  /path/to/the/package/reduce4me.py /current/work/directory/with/FITSfiles --device mres --method APEX --sl True --strip False
+python3  /path/to/the/package/reduce4me.py /current/work/directory/with/FITSfiles --device=mres --method=APEX --sl=True --strip=False
 
 To get help run this:
 python3  /path/to/the/package/reduce4me.py /current/work/directory/with/FITSfiles  --help
 
 Warning:
-1. By default the package is configured for work with data from MRES in the observing season 2021/2022
-2. Before the first run it is mandatory to create in the directory with FITS-files an ASCII file names.txt of the following format:
+1. By default, the package is configured to work with data from the original version of MRES. The upgraded version of MRES (with an Andor iKon-M CCD) has code umres.
+2. Before the first run, it is mandatory to create in the directory with FITS-files an ASCII file names.txt of the following format:
 
 name-of-bias-file.fits   ;  Bias
 
