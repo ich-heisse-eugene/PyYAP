@@ -14,6 +14,9 @@ import matplotlib.pyplot
 
 import os.path
 
+# import warnings
+# warnings.filterwarnings("error")
+
 mpl.use('tkagg')
 ##import tkinter as Tk
 matplotlib.pyplot.ion()
@@ -22,7 +25,7 @@ matplotlib.pyplot.ion()
 base_name = 'thar.dat'
 FWHM = 6
 OS = 36         # Absolute number of the first (red) order
-threshold = 0.001
+threshold = 0.1
 tolerance = 0.05
 X_Order = 5
 Y_Order = 5
@@ -36,7 +39,7 @@ key_down = 'down'   #prev order
 key_fit = 'r'       #fit data
 key_fit_o = 'o'     #fit data
 key_quit = 'e'      #quit from fit mode
-key_auto = 'a'      #add lines auto
+key_auto = 'ctrl+a'      #add lines auto
 key_param = ':'     #enter parameters ([x_order], [y_order], [tolerance] for auto search (A), [OS] order shift, [threshold] for auto search, [FWHM] of features)
 key_print = 'ctrl+p'#print params
 key_write = 'w'     #write data to files
@@ -170,6 +173,8 @@ def dispers_p(local, color):
     ax.set_xlim([numpy.min(X), numpy.max(X)])
     ax.plot(X[g], resudial[g], 'go')
     ax.plot(X[b], resudial[b], 'bo')
+    ax.set_xlabel("Pixels")
+    ax.set_ylabel("Residuals (Angstroms)")
     matplotlib.pyplot.title(label_data)
     matplotlib.pyplot.draw()
 
@@ -197,8 +202,8 @@ def dispers_o(local,color):
     ax.plot(O[g], resudial[g], 'go')
     ax.plot(O[b], resudial[b], 'bo')
     matplotlib.pyplot.title(label_data)
-    matplotlib.pyplot.ylabel('Angstroms', fontsize=15)
-    matplotlib.pyplot.xlabel('Order', fontsize=15)
+    matplotlib.pyplot.ylabel("Residuals (Angstroms)")
+    matplotlib.pyplot.xlabel('Order')
     matplotlib.pyplot.draw()
 
     return (C)
@@ -214,9 +219,9 @@ def WL_checker(WL, o):
 ####################################################################
 ###1D Moffat fitting/center search
 def center(x_coo, y_coo, bckgrnd):
-    X = np.linspace(int(x_coo)-fit_area, int(x_coo)+fit_area+1, 2*fit_area+1, dtype=int)
-    ROI = spectrum[order, X]
-    x0 = ROI.shape[0]//2
+    ROI =  copy(spectrum[order, int(x_coo-fit_area):int(x_coo+fit_area)])
+    X=numpy.arange(0, ROI.shape[0])
+    x0 = int(ROI.shape[0]/2)
     #moffat fitting
     #A - amplitude, B,C - coeff of function (width ...), D - background
     moffat = lambda x, A, B, C, D, x0: A*(1 + ((x-x0)/B)**2)**(-C)+D
@@ -224,18 +229,19 @@ def center(x_coo, y_coo, bckgrnd):
     try:
         popt, pcov = curve_fit(moffat, X, ROI, p0, maxfev=10000)
     except RuntimeError:
-        return 0
+        return(0)
     return (popt[4]-fit_area)
 
 ####################################################################
 ###search max element in 1d array
 def get_max(x_coo):
-    x_range = np.linspace(int(x_coo)-FWHM, int(x_coo)+FWHM+1, 2*FWHM+1, dtype=int)
-    ROI =  spectrum[order, x_range]
-    x_max = int(x_coo)-FWHM+np.argmax(ROI)
-    Max = spectrum[order, x_max]
-    Min = np.min(ROI)
-    return (x_max, Max, Min)
+    ROI =  copy(spectrum[order, int(x_coo-FWHM):int(x_coo+FWHM)])
+    Max = numpy.amax(ROI)
+    Min = numpy.amin(ROI)
+    for ii in range (0, ROI.shape[0]):
+        if ROI[ii]==Max:
+            return (x_coo+ii-FWHM, Max, Min)
+
 
 ####################################################################
 ###redraw spectrum
@@ -243,8 +249,10 @@ def draw_spec(spectrum, line):
     graph_data = spectrum[line,:]
     label_data = 'Beam =' + str(line)+ ', '+ 'Order = ' + str(line+OS)+', Status = ' + status
     matplotlib.pyplot.cla()
-    ax.plot(graph_data, label=label_data, color= 'black', gid='object')
+    ax.plot(graph_data, label=label_data, color= '#ff000d', gid='object', lw=1)
+    ax.set_xlabel("Pixels")
     ax.set_xlim([0, len(graph_data)])
+    ax.set_ylabel("Intensity")
     matplotlib.pyplot.title(label_data)
     if len(features)!=0:
         for ii in range(0,len(features)):
@@ -255,10 +263,10 @@ def draw_spec(spectrum, line):
                 col='g^'
                 if color[ii]==0:
                     col='b^'
-                ax.plot(x_coo, 0, col)
+                ax.plot(x_coo, 0, col, ms=5)
                 ax.annotate(WL, xy=(x_coo, 0), rotation=90,\
                             horizontalalignment='center',\
-                            verticalalignment='top',  color='b')
+                            verticalalignment='top',  color='b', fontsize=8)
     matplotlib.pyplot.draw()
     return None
 
@@ -334,7 +342,7 @@ def auto_search(threshold, tolerance):
                 PWL = solution(fit_params)(x_coo,order+OS)
                 loc_thar = (thar - PWL)**2
                 nearest = numpy.argmin(loc_thar)
-                if math.sqrt(loc_thar[nearest])<tolerance*2:
+                if np.sqrt(loc_thar[nearest]) < tolerance*2:
                     offset = center(x_coo, y_coo, bckgrnd)
                     if offset!=0:
                         x_coo=round(x_coo+offset,3)
@@ -593,6 +601,7 @@ file_thar = argv[1]
 
 fig = matplotlib.pyplot.figure(1, figsize=(16, 5))
 ax = fig.add_subplot(111)
+fig.subplots_adjust(left=0.06, right=0.98, top=0.92, bottom=0.12)
 
 features=[]
 color=[]
