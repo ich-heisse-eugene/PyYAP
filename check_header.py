@@ -11,7 +11,7 @@ def fill_headers(file_names, device, ver):
         obsname = 'TNO'         # Thai National Observatory, Doi Inthanon
         obslat = 18.573828      # Latitude of the observatory
         obslon = 98.4817485     # Longitude of the observatory, E
-        obsalt = 2549.          # Altitude of the observatory
+        obsalt = 2416.          # Altitude of the observatory
         gain = 1.0              # Electronic gain in e-/ADU. Andor Newton
         rdnoise = 3.0           # CCD readout noise
         if device == 'umres':   # Andor iKon-M
