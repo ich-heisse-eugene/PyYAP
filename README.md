@@ -36,10 +36,16 @@ name-of-obj-file.fits   ;  HD 92554*
 name-of-arc-file.fits   ; ThAr  
 *Objects' names **must** be recognisable by Simbad. By default, PyYAP corrects the wavelength scale of scientific objects to the barycentre.
 
-The fastest way to create this file is to run the programme `create_names_txt.py` from the pipeline's root directory: `python3 /path/to/PyYAP/create_names_txt.py "*.fits"`. After that, verify the content of the second column of `names.txt`. The minimum set of types **must** include bias, fits, object, and thar. Optionally, you can use sky in case of observations of the daytime solar spectrum.
+The fastest way to create this file is to run the programme `create_names_txt.py` from the pipeline's root directory: `python3 /path/to/PyYAP/create_names_txt.py "*.fits"`. After that, verify the content of the second column of `names.txt`. The minimum set of types **must** include bias, fits, object, and thar. Optionally, you can use sky as the name in case of observations of the daytime solar spectrum.
 
 Play with the program or contact me if you need help: eugene AT narit.or.th
 
-Eugene Semenko
-
+Eugene Semenko  
 Last update 17 December 2025, NARIT
+
+"_Лупайте сю скалу! Нехай нi жар, нi холод
+Не спинить вас!
+Зносiть i труд, i спрагу, й голод,
+Бо вам призначено скалу сесю розбить_"  
+Іван Франко "Каменярі"  
+1878
