@@ -43,9 +43,9 @@ Play with the program or contact me if you need help: eugene AT narit.or.th
 Eugene Semenko  
 Last update 17 December 2025, NARIT
 
-"_Лупайте сю скалу! Нехай нi жар, нi холод
-Не спинить вас!
-Зносiть i труд, i спрагу, й голод,
+"_Лупайте сю скалу! Нехай нi жар, нi холод  
+Не спинить вас!  
+Зносiть i труд, i спрагу, й голод,  
 Бо вам призначено скалу сесю розбить_"  
 Іван Франко "Каменярі"  
 1878
