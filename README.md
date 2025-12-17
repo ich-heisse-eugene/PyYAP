@@ -7,6 +7,7 @@ PyYAP retains some legacy from the original code, yet, compared to it, this pipe
 For correct use, the pipeline requires Python v3.10+ and the following modules:
 - `sys, os, warnings, math, shutil, datetime, types, datetime, types, time, copy, logging, multiprocessing`
 - `astropy, numpy, matplotlib, scipy, scikit-image, sklearn, astroquery, argparse`.
+- 
 The package was independently tested on machines running Debian Linux Sid, macOS (Homebrew), and Windows 10-11.
 
 The current version of the pipeline is primarily designed for the reduction of echelle spectra obtained with the Medium-Resolution Echelle Spectrograph (MRES) of the 2.4-m Thai
