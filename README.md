@@ -30,13 +30,10 @@ WARNING:
 1. By default, the package is configured to handle the spectra from the original version of MRES used before 16 December 2024. The upgraded version of MRES (with an Andor iKon-M CCD) uses the `umres` code.
 2. Before the first run, it is mandatory to create in the directory with FITS-files an ASCII file `names.txt` of the following format:
 
-name-of-bias-file.fits   ;  Bias
-
-name-of-flat-file.fits   ;  Flat
-
-name-of-obj-file.fits   ;  HD 92554*
-
-name-of-arc-file.fits   ; ThAr
+name-of-bias-file.fits   ;  Bias  
+name-of-flat-file.fits   ;  Flat  
+name-of-obj-file.fits   ;  HD 92554*  
+name-of-arc-file.fits   ; ThAr  
 *Objects' names **must** be recognisable by Simbad. By default, PyYAP corrects the wavelength scale of scientific objects to the barycentre.
 
 The fastest way to create this file is to run the programme `create_names_txt.py` from the pipeline's root directory: `python3 /path/to/PyYAP/create_names_txt.py "*.fits"`. After that, verify the content of the second column of `names.txt`. The minimum set of types **must** include bias, fits, object, and thar. Optionally, you can use sky in case of observations of the daytime solar spectrum.
