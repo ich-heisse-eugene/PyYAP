@@ -79,7 +79,7 @@ def detCos(image,  out_clean,
     # load image from FITS file
     img = loadImage(image)
     try:
-        gain=img.getHdrValue('gain')
+        gain=img.getHdrValue('GAIN')
     except KeyError:
         pass
     gain = float(gain)
@@ -103,7 +103,7 @@ def detCos(image,  out_clean,
 
     # estimate Poisson noise after roughly cleaning cosmics using a median filter
     try:
-        rdnoise=float(img.getHdrValue('rdnoise'))
+        rdnoise=float(img.getHdrValue('RDNOISE'))
     except KeyError:
         rdnoise=float(rdnoise)
     if verbose==True:

@@ -52,14 +52,14 @@ def disp_add(fits_name, thar_name, view, queue):
                         ltt_bary = dateobs.light_travel_time(star, kind='barycentric', location=observat)
                         bjd = dateobs.jd + ltt_bary.value
                         bcr = star.radial_velocity_correction(obstime=dateobs)
-                        prihdr.set('BJD', round(bjd, 5), 'Barycentric JD')
-                        prihdr.set('BARYCORR', round(bcr.to(u.km/u.s).value, 2), 'Barycentric correction')
+                        prihdr.set('BJD', bjd, 'Barycentric JD')
+                        prihdr.set('BARYCORR', bcr.to(u.km/u.s).value, 'Barycentric correction')
                         print(f"Object with RA={ra}, DEC={dec}, J{epoch}")
                         print(f"Observatory at lat={obslat}, lon={obslon}, alt={obsalt}")
-                        print(f"BJD={bjd:.5f}, BCRV={bcr.to(u.km/u.s).value:.2f} km/s")
+                        print(f"BJD={bjd:.5f}, BCRV={bcr.to(u.km/u.s).value:.3f} km/s")
                         queue.put((logging.INFO, f"Object with RA={ra}, DEC={dec}, J{epoch}"))
                         queue.put((logging.INFO, f"Observatory at lat={obslat}, lon={obslon}, alt={obsalt}"))
-                        queue.put((logging.INFO, f"BJD={bjd:.5f}, BCRV={bcr.to(u.km/u.s).value:.2f} km/s"))
+                        queue.put((logging.INFO, f"BJD={bjd:.5f}, BCRV={bcr.to(u.km/u.s).value:.3f} km/s"))
                         bcr = bcr.to(u.km/u.s).value
                     else:
                         print("No information about the observatory in the header. Wavelength remains uncorrected")

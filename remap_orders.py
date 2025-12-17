@@ -127,7 +127,7 @@ def read_traces(ap_file):
     return n_orders, poly_order, adaptive, ap_size, np.asarray(Y), np.asarray(FWHM)
 
 def rough_shift_eval(file_arc_spec, file_arc_ref):
-    subar = 64
+    subar = 128
     try:
         with fits.open(file_arc_spec) as hdu:
             img_arc = hdu[0].data
@@ -142,9 +142,9 @@ def rough_shift_eval(file_arc_spec, file_arc_ref):
         return None, None
     (ydim, xdim) = img_ref.shape
     img_ref = img_ref[ydim//2-subar:ydim//2+subar+1, xdim//2-subar:xdim//2+subar+1]
-    img_ref = img_ref / np.max(img_ref)
+    img_ref = img_ref / img_ref.max()
     img_arc = img_arc[ydim//2-subar:ydim//2+subar+1, xdim//2-subar:xdim//2+subar+1]
-    img_arc = img_arc / np.max(img_arc)
+    img_arc = img_arc / img_arc.max()
     # Calculate CCF of two images
     ccf = correlate(np.float32(img_ref), np.float32(img_arc), mode="full")
     (ymax, xmax) = np.unravel_index(ccf.argmax(), ccf.shape)

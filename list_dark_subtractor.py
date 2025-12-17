@@ -22,29 +22,29 @@ def parse_exposures(Path2Temp, list_names):
                     obj_exp = np.append(obj_exp, int(hdr['EXPTIME']))
     return obj_exp, obj_fn
 
-def process_block(Path2Data, Path2Temp, list_names, dark_time_exp):
+def process_block(Path2Data, Path2Temp, list_names, dark_time_exp, conf, queue):
     obj_exp, obj_fn = parse_exposures(Path2Temp, list_names)
     obj_time_exp = np.unique(obj_exp)
     for t in obj_time_exp:
         if t in dark_time_exp:
             idx = np.where(obj_exp == t)
             np.savetxt(os.path.join(Path2Temp, 's_temp_dark_'+str(t)+'s.txt'), obj_fn[idx], fmt='%s')
-            status = list_subtractor(os.path.join(Path2Temp, 's_temp_dark_'+str(t)+'s.txt'), os.path.join(Path2Data, 's_dark_'+str(t)+'s.fits'), 'Dark')
+            status = list_subtractor(os.path.join(Path2Temp, 's_temp_dark_'+str(t)+'s.txt'), os.path.join(Path2Data, 's_dark_'+str(t)+'s.fits'), 'Dark', conf)
             print(f"Texp = {t} s dark subtraction: {status}")
             queue.put((logging.INFO, f"Texp = {t} s dark subtraction: {status}"))
             os.remove(os.path.join(Path2Temp, 's_temp_dark_'+str(t)+'s.txt'))
             print()
     return None
 
-def dark_subtractor(Path2Data, Path2Temp, lists_names, area, flip, s_bias_name, queue):
+def dark_subtractor(Path2Data, Path2Temp, lists_names, area, flip, s_bias_name, conf, queue):
     trimmer_data = trimmer(Path2Data, os.path.join(Path2Temp, 'dark_list.txt'), area, flip)
     print("Darks trimmed")
     queue.put((logging.INFO, "Darks trimmed"))
-    status = list_cosmo_cleaner(Path2Temp, 'dark_list.txt', 'dark_CRR_cleaned_list.txt')
+    status = list_cosmo_cleaner(Path2Temp, 'dark_list.txt', 'dark_CRR_cleaned_list.txt', conf, queue)
     print(f"Darks {status}")
     queue.put((logging.INFO, f"Darks {status}"))
     print()
-    status = list_subtractor(os.path.join(Path2Temp, 'dark_CRR_cleaned_list.txt'), os.path.join(Path2Data, s_bias_name), 'Bias')
+    status = list_subtractor(os.path.join(Path2Temp, 'dark_CRR_cleaned_list.txt'), os.path.join(Path2Data, s_bias_name), 'Bias', conf)
     print(f"Darks: {status}")
     queue.put((logging.INFO, f"Darks: {status}"))
     print()
@@ -64,5 +64,5 @@ def dark_subtractor(Path2Data, Path2Temp, lists_names, area, flip, s_bias_name, 
             shutil.copy(dark_fn[idx][0], os.path.join(Path2Data, 's_dark_'+str(t)+'s.fits'))
 
     for item in lists_names:
-        process_block(Path2Data, Path2Temp, item, dark_time_exp)
+        process_block(Path2Data, Path2Temp, item, dark_time_exp, conf, queue)
     return 'completed'

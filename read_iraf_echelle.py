@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3.11
+#!/usr/bin/env python3
 from sys import argv, exit
 from astropy.io import fits
 import numpy as np
@@ -54,7 +54,7 @@ def read_multispec(input_file):
             finally:
                 count_keys = len(wat2)
             long_wat2 = ""
-            wave_params = np.zeros((nspec, 24), dtype=float)
+            wave_params = np.zeros((nspec, 25), dtype=float)
             for i in wat2:
                 key = header[i].replace('\'', '')
                 if len(key) < 68: key += ' '

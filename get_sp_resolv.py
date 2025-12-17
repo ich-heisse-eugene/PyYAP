@@ -167,7 +167,7 @@ def resol_in_order(wave, spec, n, queue):
     """
         Computes resolution in a separate order
     """
-    half_win = 5
+    half_win = 15
     pixarr = np.arange(len(wave), dtype=float)
     idx = np.where(spec < np.mean(spec))
     if len(idx[0]) == 0:

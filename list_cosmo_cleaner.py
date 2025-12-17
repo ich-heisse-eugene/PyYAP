@@ -6,7 +6,7 @@ import multiprocessing as mp
 
 def process(name, queue):
     out_name = os.path.splitext(name)[0] + '_CRR.fits'
-    detCos(image=name,  out_clean=out_name, verbose=False)
+    detCos(image=name,  out_clean=out_name, verbose=True)
     print(f"{out_name} created")
     queue.put((logging.INFO, f"{out_name} created"))
     return out_name

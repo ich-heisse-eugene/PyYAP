@@ -11,19 +11,26 @@ def fill_headers(file_names, device, ver):
         obsname = 'TNO'         # Thai National Observatory, Doi Inthanon
         obslat = 18.573828      # Latitude of the observatory
         obslon = 98.4817485     # Longitude of the observatory, E
-        obsalt = 2416.          # Altitude of the observatory
-        gain = 1.0              # Electronic gain in e-/ADU. Andor Newton
-        rdnoise = 3.0           # CCD readout noise
+        obsalt = 2549.          # Altitude of the observatory
+        gain = 1.16              # Electronic gain in e-/ADU. Andor Newton
+        rdnoise = 4.5           # CCD readout noise
         if device == 'umres':   # Andor iKon-M
             gain = 1.13         # Electronic gain in e-/ADU
             rdnoise = 3.2       # CCD readout noise
-    # elif device == 'eshel_tno':
-    #     obsname = 'TNO'         # Thai National Observatory, Doi Inthanon
-    #     obslat = 18.573828      # Latitude of the observatory
-    #     obslon = 98.4817485     # Longitude of the observatory, E
-    #     obsalt = 2549.          # Altitude of the observatory
-    #     gain = 0.95             # Electronic gain in e-/ADU
-    #     rdnoise = 7.0           # CCD readout noise
+    elif device == 'eshel2':
+        obsname = 'TNO'         # Thai National Observatory, Doi Inthanon
+        obslat = 18.573828      # Latitude of the observatory
+        obslon = 98.4817485     # Longitude of the observatory, E
+        obsalt = 2549.          # Altitude of the observatory
+        gain = 1.0              # Electronic gain in e-/ADU
+        rdnoise = 4.0           # CCD readout noise
+    elif device == 'genaoshel':
+        obsname = 'genao'         # Georgian National Astrophysical Observatory, Abastumani
+        obslat = 41.7541666     # Latitude of the observatory
+        obslon = 42.8194444     # Longitude of the observatory, E
+        obsalt = 1650.          # Altitude of the observatory
+        gain = 1.0              # Electronic gain in e-/ADU
+        rdnoise = 2.0           # CCD readout noise
     # elif device == 'eshel_zdnc':
     #     obsname = 'Zdanice'     # ASA 0.8m telescope, Ždánice
     #     obslat = 49.06574       # Latitude of the observatory
@@ -61,14 +68,14 @@ def fill_headers(file_names, device, ver):
         print(f"File: {files[ii]}\tObjname: {objnames[ii]}")
         with fits.open(files[ii].strip(), mode='update') as hdu:
             hdr = hdu[0].header
+            if hdr['NAXIS'] == 2:
+                data = hdu[0].data.copy()
+            elif hdr['NAXIS'] == 3:
+                data = hdu[0].data[0].copy()
+            if data.dtype.name != 'uint32':
+                print(f"Scale data from {hdu[0].data.dtype.name} to 'float32'")
+                hdu[0].data = np.float32(data)
             if 'PIPELINE' not in hdr or hdr['PIPELINE'].lower().find("pyyap") == -1:
-                if hdr['NAXIS'] == 2:
-                    data = hdu[0].data.copy()
-                elif hdr['NAXIS'] == 3:
-                    data = hdu[0].data[0].copy()
-                if data.dtype.name != 'uint32':
-                    print(f"Scale data from {hdu[0].data.dtype.name} to 'float32'")
-                    hdu[0].data = np.float32(data)
                 if 'DATE-OBS' in hdr:
                     if hdr['DATE-OBS'].find('T') != -1:
                         tm_start = Time.Time(hdr['DATE-OBS'])
@@ -76,6 +83,9 @@ def fill_headers(file_names, device, ver):
                         tm_start = Time.Time(hdr['DATE-OBS']+'T'+hdr['UT'])
                 elif 'FRAME' in hdr:
                     tm_start = Time.Time(hdr['FRAME'])
+                elif 'DATE' in hdr:
+                    hdr.set('DATE-OBS', hdr['DATE'], 'Copy of DATE')
+                    tm_start = Time.Time(hdr['DATE'])
                 if 'EXPOSURE' in hdr and 'EXPTIME' not in hdr:
                     texp = hdr['EXPOSURE'] * u.s
                     hdr.set('EXPTIME', hdr['EXPOSURE'], 'Exposure (s)')
@@ -93,9 +103,9 @@ def fill_headers(file_names, device, ver):
                     hdr.set('DATE', hdr['DATE-OBS'].split(".")[0], 'Copy of DATE-OBS')
                 hdr.set('DISPAXIS', 1, 'Keyword for IRAF')
                 if 'GAIN' not in hdr:
-                    hdr.set('GAIN', gain, 1.0)
+                    hdr.set('GAIN', gain, "e-/ADU")
                 if 'RDNOISE' not in hdr:
-                    hdr.set('RDNOISE', rdnoise, 1.0)
+                    hdr.set('RDNOISE', rdnoise, "e-")
                 hdr.set('OBSGEO-B', obslat, 'Latitude of the observatory')
                 hdr.set('OBSGEO-L', obslon, 'Longitude of the observatory')
                 hdr.set('OBSGEO-H', obsalt, 'Altitude of the observatory')

@@ -266,9 +266,9 @@ def thar_auto(dir_name, file_name, OS, X_Order, Y_Order, view, queue):
     global line_list
     line_list = 'thar.dat'               #name of full features list for thar lamp
     global FWHM
-    FWHM = 4                                        #approximate FWHM of profile
+    FWHM = 6                                        #approximate FWHM of profile
     global threshold
-    threshold = 3                               #threshold for automatic search of features, 0.1 for FOX
+    threshold = 0.05                               #threshold for automatic search of features, 0.1 for FOX
     global tolerance
     tolerance = 0.05                               #tolerance in A for auto identification of features
     global max_shift
