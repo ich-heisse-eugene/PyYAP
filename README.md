@@ -1,5 +1,5 @@
 # PyYAP
-Yet Another Pipeline in Python for echelle data reduction
+_**Py**thon-based **Y**et **A**nother **P**ipeline_ for echelle data reduction.
 
 The idea for PyYAP was inspired by the pipeline PySEX, developed by Vadim Krushinsky (Ural Federal University, Ekaterinburg, Russia) to reduce simple echelle spectra.
 PyYAP retains some legacy from the original code, yet, compared to it, this pipeline offers significant improvements, with most of the procedures written from scratch.
