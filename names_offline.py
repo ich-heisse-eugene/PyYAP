@@ -1,6 +1,6 @@
-#!/usr/local/bin/python3.11
+#!/usr/bin/env python3
 """
-Programme for offline update of raw FITS files obtained with MRES@TNT, Doi Inthanon, Chiang Mai, Thailand
+Programme for offline updating the raw FITS files obtained with MRES@TNT, Doi Inthanon, Chiang Mai, Thailand
 Author: Eugene Semenko
 Last update: 20 Dec 2025
 
