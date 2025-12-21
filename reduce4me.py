@@ -36,7 +36,7 @@ warnings.simplefilter("ignore")
 warnings.filterwarnings("ignore")
 
 Pkg_path = os.path.realpath(Pkg_path)
-ver = "2025.05"
+ver = "2025.12"
 
 #####################################################################################
 ## Parameters
@@ -511,3 +511,4 @@ if __name__ == "__main__":
     ## Main entrance point
     S_EX(conf)
     exit(0)
+
