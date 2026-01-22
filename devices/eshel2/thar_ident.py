@@ -14,14 +14,14 @@ import matplotlib.pyplot
 
 import os.path
 
-mpl.use('tkagg')
+mpl.use('qtagg')
 ##import tkinter as Tk
 matplotlib.pyplot.ion()
 ##################################################################
 ####parameters
 base_name = 'thar.dat'
-FWHM = 6
-OS = 25         # Absolute number of the first (red) order
+FWHM = 3
+OS = 26         # Absolute number of the first (red) order
 threshold = 0.001
 tolerance = 0.05
 X_Order = 5
@@ -214,18 +214,33 @@ def WL_checker(WL, o):
 ####################################################################
 ###1D Moffat fitting/center search
 def center(x_coo, y_coo, bckgrnd):
-    X = np.linspace(int(x_coo)-fit_area, int(x_coo)+fit_area+1, 2*fit_area+1, dtype=int)
-    ROI = spectrum[order, X]
+    s_order = spectrum[order]
+    fit_area = FWHM
+    x_range_min = x_coo-fit_area
+    x_range_max = x_coo+fit_area+1
+    if x_range_min < 0:
+        x_range_min = 0
+    if x_range_max > s_order.shape[0]-1:
+        x_range_max = s_order.shape[0]-1
+    x_range = np.linspace(x_range_min, x_range_max, (x_range_max - x_range_min), dtype=int)
+    ROI = s_order[x_range]
+    X = np.arange(ROI.shape[0])
     x0 = ROI.shape[0]//2
     #moffat fitting
     #A - amplitude, B,C - coeff of function (width ...), D - background
-    moffat = lambda x, A, B, C, D, x0: A*(1 + ((x-x0)/B)**2)**(-C)+D
-    p0 = np.array([y_coo, 3, 3, bckgrnd, x0])
-    try:
-        popt, pcov = curve_fit(moffat, X, ROI, p0, maxfev=10000)
-    except RuntimeError:
+    # moffat = lambda x, A, B, C, D, x0: A*(1 + ((x-x0)/B)**2)**(-C)+D
+    # p0 = np.array([y_coo, 3, 3, bckgrnd, x0])
+    # Gaussian fitting
+    gauss = lambda x,a,b,c,d: a*np.exp(-(x - b)**2/(2. * c**2)) + d
+    p0 = np.array([y_coo, x0, 1, bckgrnd])
+    if y_coo >= threshold*bckgrnd:
+        try:
+            popt, pcov = curve_fit(gauss, X, ROI, p0, maxfev=10000, method='lm')
+        except Exception:
+            return 0
+        return (popt[1]-fit_area)
+    else:
         return 0
-    return (popt[4]-fit_area)
 
 ####################################################################
 ###search max element in 1d array
