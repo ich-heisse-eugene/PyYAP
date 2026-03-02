@@ -24,7 +24,7 @@ def fill_headers(file_names, device, ver):
         obsalt = 2549.          # Altitude of the observatory
         gain = 1.0              # Electronic gain in e-/ADU
         rdnoise = 4.0           # CCD readout noise
-    elif device == 'genaoshel':
+    elif device == 'genaoshel' or device == 'abaoshel':
         obsname = 'genao'         # Georgian National Astrophysical Observatory, Abastumani
         obslat = 41.7541666     # Latitude of the observatory
         obslon = 42.8194444     # Longitude of the observatory, E
