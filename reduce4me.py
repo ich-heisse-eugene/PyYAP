@@ -36,11 +36,11 @@ warnings.simplefilter("ignore")
 warnings.filterwarnings("ignore")
 
 Pkg_path = os.path.realpath(Pkg_path)
-ver = "2025.12"
+ver = "2026.03"
 
 #####################################################################################
 ## Parameters
-devices = ['mres', 'umres'] # List of valid devices
+devices = ['mres', 'umres', 'eshel2', 'genaoshel', 'abaoshel'] # List of valid devices
 
 #####################################################################################
 ## Let's get started
@@ -511,4 +511,5 @@ if __name__ == "__main__":
     ## Main entrance point
     S_EX(conf)
     exit(0)
+
 
